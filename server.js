@@ -13,7 +13,9 @@ const multer       = require('multer');
 const admin        = require('firebase-admin');
 
 /* ── Firebase 초기화 ── */
-const serviceAccount = require('./firebase-key.json');
+const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
+  ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+  : require('./firebase-key.json');
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 const db = admin.firestore();
 
