@@ -1,0 +1,9 @@
+﻿node_modules/
+data/
+.env
+public/uploads/
+*.db
+system_prompt_master.txt
+
+firebase-key.json
+*.log

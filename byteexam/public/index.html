@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>byteexam</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  crossorigin="anonymous" onload="window._katexReady=true"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+/* ══ RESET ══ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d0f; --surface:#16161a; --surface2:#1e1e24; --surface3:#252530;
+  --border:#2a2a35; --border2:#353545;
+  --accent:#6c63ff; --accent2:#a78bfa; --accent-dim:rgba(108,99,255,.15);
+  --text:#e8e8f0; --text2:#b0b0c8; --muted:#8888aa;
+  --danger:#ef4444; --danger-dim:rgba(239,68,68,.12);
+  --success:#22c55e; --warn:#f59e0b;
+  --r:10px; --font:'Pretendard Variable',Pretendard,system-ui,sans-serif;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;line-height:1.6}
+button{cursor:pointer;font-family:inherit;border:none;outline:none}
+input,select,textarea{font-family:inherit;outline:none}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+
+/* ══ LAYOUT ══ */
+#app{display:flex;flex-direction:column;min-height:100vh}
+
+/* ── NAV ── */
+nav{
+  position:sticky;top:0;z-index:200;
+  display:flex;align-items:center;gap:12px;
+  padding:0 22px;height:54px;
+  background:rgba(13,13,15,.94);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border);
+}
+.nav-logo{
+  display:flex;align-items:center;gap:9px;
+  font-weight:800;font-size:17px;letter-spacing:-.5px;
+  color:var(--text);
+}
+.nav-logo .badge{
+  font-size:9px;font-weight:700;padding:2px 6px;border-radius:20px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;
+}
+.nav-tabs{display:flex;gap:2px;margin-left:8px}
+.nav-tab{
+  padding:5px 13px;border-radius:6px;font-size:13px;font-weight:500;
+  color:var(--muted);background:transparent;transition:all .15s;
+}
+.nav-tab:hover{color:var(--text2);background:var(--surface2)}
+.nav-tab.active{color:var(--accent2);background:var(--accent-dim)}
+.nav-sp{flex:1}
+.nav-user{display:flex;align-items:center;gap:8px;font-size:13px}
+.nav-user .name{color:var(--text2);font-weight:600}
+.nav-user .admin-badge{
+  font-size:10px;font-weight:700;padding:1px 7px;border-radius:12px;
+  background:rgba(245,158,11,.15);color:var(--warn);border:1px solid rgba(245,158,11,.3);
+}
+
+/* ══ BUTTONS ══ */
+.btn{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:7px 13px;border-radius:7px;font-size:13px;font-weight:500;transition:all .15s;
+}
+.btn-sm{padding:4px 10px;font-size:12px;border-radius:6px}
+.btn-xs{padding:2px 8px;font-size:11px;border-radius:5px}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted)}
+.btn-ghost:hover{border-color:var(--border2);color:var(--text2)}
+.btn-primary{background:var(--accent);color:#fff;border:1px solid transparent}
+.btn-primary:hover{background:#5b53ee}
+.btn-danger{background:transparent;border:1px solid var(--border);color:var(--danger)}
+.btn-danger:hover{background:var(--danger-dim);border-color:var(--danger)}
+.btn-warn{background:transparent;border:1px solid rgba(245,158,11,.35);color:var(--warn)}
+.btn-warn:hover{background:rgba(245,158,11,.1)}
+
+/* ══ FORM ══ */
+.fg{margin-bottom:14px}
+.fg label{display:block;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px}
+.fg input,.fg select,.fg textarea{
+  width:100%;padding:9px 13px;
+  background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+  color:var(--text);font-size:13px;transition:border .15s;
+}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--accent2)}
+.fg select{
+  appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238888aa' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;padding-right:30px;
+}
+.fg textarea{resize:vertical;line-height:1.6}
+
+/* ══ PAGES ══ */
+main{flex:1;display:flex;flex-direction:column}
+.page{display:none;flex:1;flex-direction:column}
+.page.active{display:flex}
+
+/* ── LOGIN ── */
+#pgLogin{align-items:center;justify-content:center;padding:40px 20px}
+.login-card{
+  width:100%;max-width:370px;
+  background:var(--surface);border:1px solid var(--border);border-radius:16px;
+  padding:38px 34px;
+}
+.login-card h2{font-size:21px;font-weight:800;margin-bottom:4px}
+.login-card .sub{color:var(--muted);font-size:13px;margin-bottom:26px}
+.login-card .btn-primary{width:100%;justify-content:center;padding:11px;font-size:14px;margin-top:4px}
+.login-err{color:var(--danger);font-size:12px;min-height:18px;margin-top:8px;text-align:center}
+.login-note{color:var(--muted);font-size:12px;text-align:center;margin-top:16px;line-height:1.8}
+.login-note a{color:var(--accent2)}
+
+/* ── MAIN APP ── */
+#pgApp{flex-direction:row}
+.sidebar{
+  width:270px;flex-shrink:0;
+  background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  height:calc(100vh - 54px);position:sticky;top:54px;overflow-y:auto;
+}
+.sb-head{
+  padding:18px 16px 12px;border-bottom:1px solid var(--border);
+}
+.sb-head h3{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.3px}
+.sb-count{font-size:11px;color:var(--muted);opacity:.6;margin-top:2px}
+.exam-list{flex:1;padding:8px}
+.exam-item{
+  padding:11px 11px;border-radius:8px;cursor:pointer;
+  border:1px solid transparent;margin-bottom:3px;transition:background .12s;
+}
+.exam-item:hover{background:var(--surface2);border-color:var(--border)}
+.exam-item.active{background:var(--accent-dim);border-color:rgba(108,99,255,.35)}
+.exam-item-title{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.exam-item-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.exam-item-diff{
+  display:inline-block;font-size:10px;font-weight:600;
+  padding:1px 6px;border-radius:4px;margin-top:3px;
+  background:rgba(108,99,255,.18);color:var(--accent2);
+}
+.sb-empty{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:40px 16px;text-align:center;color:var(--muted);font-size:13px;gap:8px;
+}
+
+/* content */
+.content{flex:1;padding:26px 30px;display:flex;flex-direction:column;gap:22px;overflow-y:auto;max-width:900px}
+
+/* card */
+.card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:22px 24px;
+}
+.card-head{
+  display:flex;align-items:center;gap:8px;margin-bottom:4px;
+}
+.card-head h2{font-size:16px;font-weight:700;flex:1}
+.card-sub{color:var(--muted);font-size:13px;margin-bottom:18px}
+
+/* gen row */
+.gen-row{display:flex;gap:11px;margin-bottom:12px}
+.gen-scope{flex:1}
+.gen-diff{min-width:200px}
+
+/* prompt box */
+.prompt-box{
+  background:var(--surface2);border:1px solid var(--border);border-radius:8px;overflow:hidden;
+}
+.prompt-box-head{
+  display:flex;align-items:center;padding:9px 13px;border-bottom:1px solid var(--border);gap:8px;
+}
+.prompt-box-head span{font-size:12px;font-weight:600;color:var(--muted);flex:1}
+.prompt-preview{
+  padding:13px 15px;font-size:11.5px;line-height:1.7;color:var(--muted);
+  white-space:pre-wrap;word-break:break-word;max-height:180px;overflow-y:auto;
+}
+
+/* ── VIEWER ── */
+.viewer-head{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.viewer-head h3{flex:1;font-size:15px;font-weight:700}
+.viewer-body{
+  background:#fff;border-radius:8px;overflow:hidden;
+  box-shadow:0 4px 28px rgba(0,0,0,.4);
+}
+
+/* ══ EXAM SHEET (white bg) ══ */
+.exam-sheet{
+  background:#fff;color:#111;
+  font-family:'Malgun Gothic','Apple SD Gothic Neo','Nanum Gothic',sans-serif;
+  font-size:13px;line-height:1.8;padding:26px 30px;
+}
+.exam-hdr{
+  display:flex;align-items:center;gap:12px;
+  border-bottom:2.5px solid #111;padding-bottom:10px;margin-bottom:16px;
+}
+.exam-logo-wrap{display:flex;flex-direction:column;align-items:flex-start}
+.exam-logo-text{font-size:16px;font-weight:900;color:#6c63ff;letter-spacing:-.5px}
+.exam-logo-sub{font-size:9px;color:#999;font-weight:500;margin-top:-1px}
+.exam-title-area{flex:1;text-align:center}
+.exam-title-area h1{font-size:15px;font-weight:800}
+.exam-title-area p{font-size:11px;color:#555;margin-top:2px}
+.exam-meta-box{text-align:right;font-size:11px;color:#555;line-height:1.9}
+/* 2단 레이아웃: CSS columns — 왼쪽 꽉 차면 오른쪽으로 자동 흐름 */
+.exam-cols{
+  column-count:2;
+  column-gap:0;
+  column-rule:1.5px solid #bbb;
+  padding:0 4px;
+}
+.exam-col{display:contents}   /* 컬럼 wrapping은 .exam-cols 가 담당 */
+.exam-col-right{display:contents}
+.exam-divider{display:none}
+/* 문제 단위로 끊김 방지 */
+.exam-q{
+  margin-bottom:14px;
+  break-inside:avoid;
+  page-break-inside:avoid;
+  padding:0 12px;
+}
+.exam-q-num{font-weight:700;font-size:13.5px;display:inline-block;min-width:24px}
+.exam-q-star{color:#e53e3e;font-size:10px;vertical-align:super}
+.exam-bogi{
+  background:#f6f6f6;border:1px solid #ddd;border-radius:3px;
+  padding:7px 11px;margin:5px 0;font-size:11.5px;
+}
+.exam-bogi-row{margin-bottom:1px}
+.exam-choices{margin-top:5px;padding-left:2px}
+.exam-choice{display:flex;gap:5px;margin-bottom:2px;font-size:12px;align-items:baseline}
+.exam-blank{
+  border-bottom:1px solid #888;width:100px;height:20px;
+  display:inline-block;margin-top:5px;vertical-align:bottom;
+}
+.exam-pt{
+  font-size:10px;color:#888;border:1px solid #ccc;border-radius:3px;
+  padding:1px 6px;display:inline-block;margin-top:3px;
+}
+/* 답지 */
+.ans-sheet{
+  background:#fffbf0;border-top:3px double #111;
+  padding:16px 30px;
+  font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:12px;
+}
+.ans-sheet h2{font-size:13px;font-weight:800;padding-bottom:6px;border-bottom:1px solid #ddd;margin-bottom:12px}
+.ans-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:14px}
+.ans-item{
+  background:#fff;border:1px solid #ddd;border-radius:4px;
+  padding:5px 8px;font-size:11px;line-height:1.5;
+  word-break:break-word;overflow-wrap:anywhere;
+  display:flex;align-items:flex-start;gap:3px;
+}
+.ans-item strong{color:#6c63ff;white-space:nowrap;flex-shrink:0}
+.ans-exps{}
+.ans-exp{margin-bottom:9px;line-height:1.7;font-size:12px}
+.ans-exp strong{color:#444}
+
+/* ══ ADMIN ══ */
+#pgAdmin{padding:28px 32px;flex-direction:column;gap:20px}
+.admin-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:4px}
+.stat-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:18px 20px;
+}
+.stat-card .val{font-size:28px;font-weight:800;color:var(--accent2)}
+.stat-card .lbl{font-size:12px;color:var(--muted);margin-top:3px}
+.admin-section{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  overflow:hidden;
+}
+.admin-section-head{
+  display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid var(--border);gap:10px;
+}
+.admin-section-head h3{font-size:14px;font-weight:700;flex:1}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.4px;text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--surface2)}
+.tbl td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:rgba(255,255,255,.02)}
+.badge-admin{
+  font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;
+  background:rgba(245,158,11,.15);color:var(--warn);border:1px solid rgba(245,158,11,.25);
+}
+.badge-user{
+  font-size:10px;font-weight:600;padding:1px 7px;border-radius:10px;
+  background:var(--surface2);color:var(--muted);border:1px solid var(--border);
+}
+.diff-badge{
+  font-size:10px;font-weight:600;padding:1px 7px;border-radius:10px;
+  background:var(--accent-dim);color:var(--accent2);border:1px solid rgba(108,99,255,.25);
+}
+
+/* ══ TOAST ══ */
+#toast{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.t-item{
+  background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+  padding:11px 16px;font-size:13px;pointer-events:auto;
+  box-shadow:0 6px 24px rgba(0,0,0,.5);animation:tIn .18s ease;
+}
+.t-item.ok{border-color:var(--success);color:var(--success)}
+.t-item.err{border-color:var(--danger);color:var(--danger)}
+@keyframes tIn{from{transform:translateX(16px);opacity:0}to{transform:none;opacity:1}}
+
+@media(max-width:680px){
+  nav{padding:0 12px;gap:8px}
+  .nav-logo{font-size:14px}
+  .nav-logo svg{width:22px;height:22px}
+  .nav-tab{padding:4px 10px;font-size:12px}
+  #sbToggleBtn{display:flex}
+  .sidebar{
+    position:fixed;top:54px;left:0;bottom:0;z-index:300;
+    width:80%;max-width:300px;
+    transform:translateX(-100%);transition:transform .25s ease;
+    box-shadow:4px 0 24px rgba(0,0,0,.5);
+  }
+  .sidebar.open{transform:translateX(0)}
+  #sbOverlay{display:block}
+  #pgApp{flex-direction:row}
+  .content{padding:14px;min-width:0}
+  .gen-row{flex-direction:column}
+  .gen-diff{min-width:unset;width:100%}
+  .admin-stats{grid-template-columns:1fr 1fr}
+  #pgAdmin{padding:16px}
+  .viewer-head{flex-wrap:wrap;gap:6px}
+  .prompt-box{font-size:12px}
+  .card{padding:16px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- NAV -->
+<div id="sbOverlay" onclick="toggleSidebar()" style="display:none;position:fixed;inset:0;z-index:299;background:rgba(0,0,0,.45)"></div>
+<nav>
+  <button id="sbToggleBtn" onclick="toggleSidebar()" style="display:none;background:none;border:none;color:var(--muted);cursor:pointer;padding:6px;border-radius:6px;align-items:center;justify-content:center">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <div class="nav-logo">
+    <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
+      <rect width="28" height="28" rx="7" fill="url(#ng1)"/>
+      <path d="M7 9h5.5a3 3 0 0 1 0 6H7V9Z" fill="#fff" fill-opacity=".9"/>
+      <path d="M7 15h6a3.5 3.5 0 0 1 0 7H7v-7Z" fill="#fff"/>
+      <rect x="16" y="9" width="5" height="13" rx="1.5" fill="#fff" fill-opacity=".5"/>
+      <defs><linearGradient id="ng1" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#6c63ff"/><stop offset="1" stop-color="#a78bfa"/>
+      </linearGradient></defs>
+    </svg>
+    byteexam <span class="badge">BETA</span>
+  </div>
+  <div class="nav-tabs" id="navTabs" style="display:none">
+    <button class="nav-tab active" data-tab="app">시험지</button>
+    <button class="nav-tab" data-tab="admin" id="adminTab" style="display:none">관리자</button>
+  </div>
+  <div class="nav-sp"></div>
+  <a href="/" style="font-size:12px;color:var(--muted);text-decoration:none;padding:5px 10px;border-radius:6px;border:1px solid var(--border);transition:color .15s,border-color .15s" onmouseover="this.style.color='var(--text2)';this.style.borderColor='var(--accent2)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border)'">← bytenode</a>
+  <div class="nav-user" id="navUser" style="display:none">
+    <span class="name" id="navName"></span>
+    <span class="admin-badge" id="adminBadge" style="display:none">ADMIN</span>
+    <button class="btn btn-ghost btn-sm" id="logoutBtn">로그아웃</button>
+  </div>
+</nav>
+
+<main>
+
+<!-- ══ 로그인 ══ -->
+<div class="page active" id="pgLogin">
+  <div class="login-card">
+    <h2>로그인</h2>
+    <p class="sub">bytenode 계정으로 로그인하세요.</p>
+    <div class="fg"><label>아이디</label>
+      <input type="text" id="liId" placeholder="아이디" autocomplete="username">
+    </div>
+    <div class="fg"><label>비밀번호</label>
+      <input type="password" id="liPw" placeholder="비밀번호" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary" id="liBtn">로그인</button>
+    <div class="login-err" id="liErr"></div>
+    <p class="login-note" id="loginNote">계정이 없으신가요? <a id="bytenodeLink" href="#" target="_blank">bytenode</a>에서 가입 후 동일한 계정으로 로그인하세요.</p>
+  </div>
+</div>
+
+<!-- ══ 메인 앱 ══ -->
+<div class="page" id="pgApp">
+  <!-- 사이드바 -->
+  <aside class="sidebar">
+    <div class="sb-head">
+      <h3>내 시험지</h3>
+      <div class="sb-count" id="sbCount">0 / 30</div>
+    </div>
+    <button class="btn btn-primary" id="newExamBtn" style="width:100%;margin-bottom:10px;justify-content:center">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      새 시험지
+    </button>
+    <div class="exam-list" id="examList">
+      <div class="sb-empty" id="examEmpty">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span>저장된 시험지가 없습니다</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 콘텐츠 -->
+  <div class="content">
+
+    <!-- 생성기 카드 -->
+    <div class="card">
+      <div class="card-head">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <h2>AI 시험지 프롬프트 생성기</h2>
+      </div>
+      <p class="card-sub">시험 범위와 난이도를 입력하면 AI에 붙여넣을 프롬프트를 생성합니다.</p>
+
+      <div class="gen-row">
+        <div class="gen-scope fg" style="margin:0">
+          <label>시험 범위</label>
+          <input type="text" id="scopeInput" placeholder="예: 고등학교 미래엔 공통수학1 1단원 (다항식)">
+        </div>
+        <div class="fg" style="margin:0;min-width:90px;max-width:90px">
+          <label>문항 수</label>
+          <input type="number" id="totalInput" value="20" min="5" max="100"
+            style="text-align:center">
+        </div>
+        <div class="gen-diff fg" style="margin:0">
+          <label>난이도</label>
+          <select id="diffSel">
+            <option value="기본">🟢 기본</option>
+            <option value="실력">🔵 실력</option>
+            <option value="강남8학군+전국단위자사고">🟡 강남 8학군 + 전국단위 자사고</option>
+            <option value="모의고사변형">🟠 모의고사 변형</option>
+            <option value="과학고+영재고">🔴 과학고 + 영재고</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label>추가 요청 사항 (선택)</label>
+        <textarea id="extraInput" rows="3" placeholder="예: 서술형 2문제 포함, 빈칸 추론 유형 추가, 단위 변환 문제 위주 등"></textarea>
+      </div>
+
+      <div class="prompt-box">
+        <div class="prompt-box-head">
+          <span>📋 생성된 프롬프트 미리보기</span>
+          <button class="btn btn-ghost btn-sm" id="copyBtn1">복사</button>
+        </div>
+        <div class="prompt-preview" id="promptPreview"></div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <button class="btn btn-primary" id="copyBtn2">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          프롬프트 복사
+        </button>
+      </div>
+    </div>
+
+    <!-- 시험지 뷰어 -->
+    <div class="card" id="viewerCard" style="display:none">
+      <div class="viewer-head">
+        <h3 id="viewerTitle">시험지</h3>
+        <button class="btn btn-ghost btn-sm" id="dlPdfBtn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          PDF
+        </button>
+        <button class="btn btn-danger btn-sm" id="delExamBtn">삭제</button>
+      </div>
+      <div class="viewer-body">
+        <div class="exam-sheet" id="examSheet"></div>
+      </div>
+    </div>
+
+    <!-- 저장 카드 -->
+    <div class="card" id="saveCard" style="display:none">
+      <div class="card-head">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        <h2>AI 출력 결과 저장</h2>
+      </div>
+      <p class="card-sub">AI가 생성한 byteexam 코드를 붙여넣고 저장하세요.</p>
+      <div class="fg"><label>제목</label>
+        <input type="text" id="saveTitleInput" placeholder="예: 공통수학1 1단원 실력 테스트">
+      </div>
+      <div class="fg"><label>AI 출력 내용</label>
+        <textarea id="saveContentInput" rows="6" placeholder="AI가 생성한 ---BYTEEXAM-START--- ... ---BYTEEXAM-END--- 코드를 붙여넣으세요."></textarea>
+      </div>
+      <button class="btn btn-primary" id="saveBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/></svg>
+        저장하기
+      </button>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /pgApp -->
+
+<!-- ══ 관리자 ══ -->
+<div class="page" id="pgAdmin">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+    <h2 style="font-size:20px;font-weight:800">관리자 패널</h2>
+    <button class="btn btn-ghost btn-sm" id="adminRefreshBtn">새로고침</button>
+  </div>
+
+  <!-- 통계 -->
+  <div class="admin-stats" id="adminStats">
+    <div class="stat-card"><div class="val" id="statUsers">—</div><div class="lbl">전체 유저</div></div>
+    <div class="stat-card"><div class="val" id="statExams">—</div><div class="lbl">전체 시험지</div></div>
+    <div class="stat-card"><div class="val" id="statVersion">v1.0</div><div class="lbl">byteexam</div></div>
+  </div>
+
+  <!-- 유저 관리 -->
+  <div class="admin-section">
+    <div class="admin-section-head">
+      <h3>유저 관리</h3>
+      <span style="font-size:12px;color:var(--muted)" id="userCount"></span>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="tbl">
+        <thead><tr>
+          <th>아이디</th><th>닉네임</th><th>권한</th><th>가입일</th><th>작업</th>
+        </tr></thead>
+        <tbody id="usersBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 시험지 관리 -->
+  <div class="admin-section">
+    <div class="admin-section-head">
+      <h3>전체 시험지</h3>
+      <span style="font-size:12px;color:var(--muted)" id="examCountAdmin"></span>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="tbl">
+        <thead><tr>
+          <th>제목</th><th>작성자</th><th>난이도</th><th>날짜</th><th>작업</th>
+        </tr></thead>
+        <tbody id="examsAdminBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /pgAdmin -->
+
+</main>
+</div><!-- /app -->
+
+<div id="toast"></div>
+
+
+<script>
+/* ════════════════════════════════
+   UTILS
+════════════════════════════════ */
+const $ = id => document.getElementById(id);
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const fmt = ts => new Date(ts).toLocaleDateString('ko-KR',{year:'2-digit',month:'2-digit',day:'2-digit'});
+
+function toast(msg, type='ok', ms=2800) {
+  const el = document.createElement('div');
+  el.className = `t-item ${type}`; el.textContent = msg;
+  $('toast').appendChild(el);
+  setTimeout(()=>el.remove(), ms);
+}
+
+/* ════════════════════════════════
+   API — 자격증명은 서버에서만
+════════════════════════════════ */
+let TOKEN = localStorage.getItem('bn_token') || '';
+let ME    = null;
+let CFG   = {};  // /api/config 에서 로드
+
+async function api(method, url, body) {
+  const opts = { method, headers: {'Content-Type':'application/json'} };
+  if (TOKEN) opts.headers['Authorization'] = 'Bearer ' + TOKEN;
+  if (body !== undefined) opts.body = JSON.stringify(body);
+  const r = await fetch(url, opts);
+  const data = await r.json().catch(()=>({}));
+  if (!r.ok) throw new Error(data.error || r.statusText);
+  return data;
+}
+
+/* ════════════════════════════════
+   INIT — config 먼저 로드
+════════════════════════════════ */
+async function init() {
+  /* 이전 PDF 생성 중 남은 wrap 정리 */
+  const stale = document.getElementById('pdfWrap');
+  if (stale) stale.remove();
+  /* pdfWrap 남아있으면 app도 숨겨진 상태일 수 있으므로 복구 */
+  const appEl2 = document.getElementById('app');
+  if (appEl2) appEl2.style.display = '';
+
+  try {
+    CFG = await api('GET', '/api/config');
+    /* bytenode 링크를 서버에서 받은 URL로 설정 */
+    const lnk = $('bytenodeLink');
+    if (lnk && CFG.bytenodeUrl) lnk.href = CFG.bytenodeUrl;
+  } catch { /* config 실패해도 진행 */ }
+
+  if (!TOKEN) return showLogin();
+  try {
+    ME = await api('GET', '/api/auth/me');
+    showApp();
+  } catch {
+    TOKEN = ''; localStorage.removeItem('bn_token');
+    showLogin();
+  }
+}
+
+/* ════════════════════════════════
+   PAGES
+════════════════════════════════ */
+function showLogin() {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  $('pgLogin').classList.add('active');
+  $('navTabs').style.display = 'none';
+  $('navUser').style.display = 'none';
+}
+
+function showApp() {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  $('pgApp').classList.add('active');
+  $('navTabs').style.display = 'flex';
+  $('navUser').style.display = 'flex';
+  $('navName').textContent = ME.displayName || ME.username;
+  if (ME.isAdmin) {
+    $('adminBadge').style.display = 'inline';
+    $('adminTab').style.display   = 'inline-flex';
+  }
+  setActiveTab('app');
+  updatePrompt();
+  loadExams();
+}
+
+/* 탭 전환 */
+document.querySelectorAll('.nav-tab').forEach(btn => {
+  btn.addEventListener('click', () => setActiveTab(btn.dataset.tab));
+});
+
+function setActiveTab(tab) {
+  document.querySelectorAll('.nav-tab').forEach(b => b.classList.toggle('active', b.dataset.tab===tab));
+  if (tab === 'admin') {
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    $('pgAdmin').classList.add('active');
+    loadAdmin();
+  } else {
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    $('pgApp').classList.add('active');
+  }
+}
+
+/* ════════════════════════════════
+   AUTH
+════════════════════════════════ */
+$('liBtn').addEventListener('click', doLogin);
+$('liId').addEventListener('keydown', e=>{ if(e.key==='Enter') $('liPw').focus(); });
+$('liPw').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+
+async function doLogin() {
+  $('liErr').textContent = '';
+  const username = $('liId').value.trim();
+  const password = $('liPw').value;
+  if (!username || !password) { $('liErr').textContent = '아이디와 비밀번호를 입력하세요.'; return; }
+  try {
+    const data = await api('POST', '/api/auth/login', { username, password });
+    TOKEN = data.token;
+    ME    = data.user;
+    localStorage.setItem('bn_token', TOKEN);
+    showApp();
+  } catch(e) { $('liErr').textContent = e.message; }
+}
+
+$('logoutBtn').addEventListener('click', () => {
+  TOKEN = ''; ME = null;
+  localStorage.removeItem('bn_token');
+  showLogin();
+});
+
+/* ════════════════════════════════
+   PROMPT 생성
+════════════════════════════════ */
+/* 5-tier difficulty specification — KERNEL framework */
+const DIFF_SPEC = {
+  '기본': {
+    transitions: '1회',
+    concepts: '1개 (단일 개념)',
+    strategy: '공식 직접 대입 및 기본 자료 해석. 복합 조건 금지.',
+    distractor: '부호 실수(±), 분수 역수 혼동, 단위 환산 오류의 결과값',
+    query: '고등학교 기초 내신 1등급 기본 문항 특징 쉬운 개념 확인 문제',
+    detail: `
+【기본 난이도 — 출제 제약 조건】
+▸ 논리 전환: 1회 한도
+▸ 개념: 단일 개념의 1차원적 적용만 허용, 복합 단원 융합 절대 금지
+▸ 오답 선지 설계: 부호(±) 실수, 분수 역수, 단위 혼용 결과값을 choice에 배치
+▸ 문항 길이: 간결하게, 조건이 1~2개를 초과하지 않도록`
+  },
+  '실력': {
+    transitions: '2회',
+    concepts: '2개 연계 개념 (같은 단원 내)',
+    strategy: 'A 조건 해석 → B값 도출 → C 공식 대입의 순차 연쇄 구조 필수',
+    distractor: '풀이 중간 단계에서 조기 종료했을 때 도달하는 값 (B값을 최종 답으로 착각)',
+    query: '고등학교 내신 3~4점 응용 문제 오답률 2단계 논리 연쇄 개념 융합 문항',
+    detail: `
+【실력 난이도 — 출제 제약 조건】
+▸ 논리 전환: 반드시 2회 (3회 이상 금지)
+▸ 구조 규칙: 첫 번째 단계의 도출 결과가 반드시 두 번째 단계의 입력값으로 사용되어야 함
+▸ 개념 융합: 동일 단원 내 이질적 개념 2개 연계 필수
+▸ 오답 선지 설계: 중간 단계 결과값(B)을 최소 2개 선지에 배치하여 조기 종료 학생 유인
+▸ choice 중 최소 1개는 공식 역산 실수 결과`
+  },
+  '강남8학군+전국단위자사고': {
+    transitions: '3~4회 (후반 문항은 4회 이상)',
+    concepts: '3개 이상 다단원 융합',
+    strategy: '교육과정 최상단 경계 활용 + 시간 압박 설계 + Heuristic Leap 요구',
+    distractor: '가장 직관적인 첫 번째 잘못된 접근법을 끝까지 계산한 결과값',
+    query: '강남 8학군 영동고 개포고 단대부고 내신 수학 기출 고난도 킬러 특징 2020 2024',
+    detail: `
+【강남 8학군 / 전국단위 자사고 — 출제 제약 조건】
+▸ 논리 전환: 3~4회, 전체 문항의 60% 이후부터 난이도 급상승 배치
+▸ 개념 융합: 3개 이상의 단원 개념을 유기적으로 결합
+▸ 교육과정 경계 전략: 범위 이탈 없이 해당 교육과정의 최상단 개념까지 밀어붙일 것
+▸ Heuristic Leap: 직관적 수치 통찰 없이는 시간 내 풀 수 없는 구조 설계
+▸ 오답 선지: 첫 번째 잘못된 접근법 계산 최종값을 ①②에 배치, 부분 정답처럼 보이도록
+▸ 문제 배열: 전반(전체의 40%)은 실력 수준으로 시작, 후반(60% 이후)은 킬러급으로 급상승`
+  },
+  '모의고사변형': {
+    transitions: '준킬러 3회 / 킬러 5회 이상',
+    concepts: '기출 뼈대 + 조건 추가·삭제·역전 2가지 이상',
+    strategy: '수능 기출 논리 구조 유지 + 조건 변형 + ㄱㄴㄷ 참/거짓 교란 설계',
+    distractor: '조건 하나를 간과했을 때 나오는 값 / 거의 정답처럼 보이는 심리적 함정',
+    query: '수능 수학 20번 30번 킬러 준킬러 문항 정답률 30% 미만 조건 구조 특징 분석',
+    detail: `
+【모의고사 변형 — 출제 제약 조건】
+▸ 기반: 수능/평가원 기출 문항의 논리 뼈대를 차용 후 아래 변형 중 2가지 이상 적용
+  ① 핵심 조건 1개 추가 또는 삭제
+  ② 교집합→여집합 등 논리 역전
+  ③ 그래프/표의 핵심 수치 1개만 교체하여 결론 역전
+  ④ 보기(ㄱ,ㄴ,ㄷ): 직관적으로 참처럼 보이는 거짓 보기 필수 포함
+▸ 목표 정답률: 30% 이하가 되도록 함정 설계
+▸ 오답 선지: 변형된 조건 하나를 무시하고 풀었을 때의 값, 원본 기출 정답을 ③④에 배치
+▸ ㄱㄴㄷ 보기: 거짓처럼 보이는 참(ㄴ)과 참처럼 보이는 거짓(ㄱ) 조합 필수`
+  },
+  '과학고+영재고': {
+    transitions: '5회 이상 또는 다단계 수리 논술 증명',
+    concepts: '이산수학·정수론·조합론·기하 증명 (올림피아드 수준)',
+    strategy: '정형 풀이법 배제 + 추상 논리 전개 + 직관 역행 함정 + 귀류법/귀납법',
+    distractor: '당연해 보이는 명제가 극단적 경계 케이스에서 무너지는 구조',
+    query: '과학고 영재고 수학 입시 기출 증명 조합론 정수론 경시 수학 올림피아드 문항',
+    detail: `
+【과학고·영재고 — 출제 제약 조건】
+▸ 논리 전환: 5회 이상, 또는 다단계 증명 구조
+▸ 정형 풀이법 금지: 고등학교 공식 대입으로 풀리지 않는 구조 필수
+▸ 요소: 정수론, 조합론, 기하학적 증명, 수학적 귀납법 중 1개 이상 포함
+▸ 함정 설계: 직관적으로 성립해 보이지만 성립하지 않는 명제, 극단값에서 무너지는 일반화
+▸ 서술형 출제 권장: type=essay로 단계별 증명 과정 요구
+▸ 오답 선지(5지선다 시): 거의 정답처럼 보이나 반례가 존재하는 명제 배치`
+  }
+};
+/* 하위 호환용 */
+const DIFF_DESC = Object.fromEntries(Object.entries(DIFF_SPEC).map(([k,v])=>[k,`논리 전환 ${v.transitions} | 융합 개념 ${v.concepts}`]));
+
+function buildPrompt() {
+  const scope = $('scopeInput').value.trim() || '(시험 범위 미입력)';
+  const diff  = $('diffSel').value;
+  const extra = $('extraInput').value.trim();
+  const total = Math.max(5, Math.min(100, parseInt($('totalInput').value)||20));
+  const half  = Math.ceil(total/2);
+  const spec = DIFF_SPEC[diff] || DIFF_SPEC['기본'];
+
+  /* 배점 계산: 3pt × x + 4pt × y = 100, x+y = total
+     y = 100 - 3*total. 음수인 경우 2점 문항 혼합. */
+  let fourPt = 100 - 3 * total;
+  let threePt = total - Math.max(0, fourPt);
+  let twoPt = 0;
+  if (fourPt < 0) {
+    // 2점 문항 도입: 2a + 3b + 4c = 100, a+b+c = total
+    fourPt = Math.max(0, Math.floor(total * 0.4));
+    threePt = Math.max(0, Math.floor(total * 0.4));
+    twoPt = total - fourPt - threePt;
+  }
+  const pointDesc = twoPt > 0
+    ? `2점 ${twoPt}개 + 3점 ${threePt}개 + 4점 ${fourPt}개 = 100점`
+    : `3점 ${threePt}개 + 4점 ${fourPt}개 = 100점`;
+
+  return `<system_persona>
+당신은 한국 최상위급 교육 평가 설계 수석 아키텍트이자 적대적 감사 엔진(Adversarial Audit Engine)입니다.
+당신의 유일한 임무는 byteexam 형식의 고충실도 평가 문항 코드를 생성하는 것입니다.
+슬라이드, 발표자료, 요약문 등 다른 형식의 산출물은 절대 생성하지 마십시오.
+</system_persona>
+
+<exam_specification>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+시험 범위: ${scope}
+난이도 등급: ${diff}
+총 문항 수: ${total}문항 | 레이아웃: 1~${half}번 왼쪽 / ${half+1}~${total}번 오른쪽 (2단)
+배점 구조: ${pointDesc}${extra ? `\n추가 요청: ${extra}` : ''}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+</exam_specification>
+
+<autonomous_research_directive>
+⚠️ 즉각 문항을 생성하지 마십시오. 반드시 아래 순서(탐색-계획-실행)를 따르십시오.
+
+【STEP 0 — 모호성 제거】
+시험 범위 "${scope}"가 특정 단원·개념 경계를 명시하지 않거나,
+난이도 조건과 충돌하는 요소가 있다면:
+→ 생성을 즉시 중단하고 사용자에게 다음 형식으로 3개 이하의 명확화 질문을 던지십시오.
+   예) "출제 전 확인이 필요합니다. ①이 범위에 삼각함수의 덧셈정리가 포함됩니까? ②서술형 문항 비율은 어떻게 설정할까요?"
+→ 사용자 답변을 받은 후에만 STEP 1로 진행하십시오.
+
+【STEP 1 — 난이도 동기화 탐색 (Explore)】
+검색 도구를 활성화하여 아래 쿼리로 실제 기출 특징을 반드시 조사하십시오:
+"${spec.query}"
+
+조사를 통해 다음을 파악하십시오:
+- 해당 난이도 문항의 실제 논리 전환 횟수와 함정 유형
+- 오답 선지에 주로 배치되는 오류 패턴
+- 문항 배치 패턴 (전·후반부 난이도 곡선)
+스스로 추측하지 마십시오. 탐색 없이 생성을 시작하면 안 됩니다.
+</autonomous_research_directive>
+
+<tripartite_verification_engine>
+
+【제1단계 — 범위 앵커링 (Scope Anchoring)】
+문항 생성 전, 내부적으로 반드시 아래를 작성하십시오:
+
+<scope_anchor>
+시험 범위: ${scope}
+
+✅ 허용 개념 (이 범위 내에서 사용 가능한 핵심 개념 — 직접 목록화):
+[여기에 직접 작성]
+
+🚫 금지 개념 (범위를 초과하는 선행/후행 개념 — 직접 목록화):
+[여기에 직접 작성]
+
+📊 난이도 파라미터 (${diff}):
+  목표 논리 전환 횟수: ${spec.transitions}
+  융합 개념 수: ${spec.concepts}
+  핵심 전략: ${spec.strategy}
+  오답 선지 설계 원리: ${spec.distractor}
+</scope_anchor>
+
+${spec.detail}
+
+【제2단계 — In-flight 자체 교정 (CoVe, 문항별 즉시 검증)】
+각 문항 초안 작성 직후, 다음 문항으로 넘어가기 전에:
+
+① 방금 작성한 문항을 스스로 단계별로 직접 풀어보십시오 (Step-by-Step Solve)
+② 풀이에 사용된 개념들을 역방향으로 추출하십시오 (Reverse Chain-of-Thought)
+③ 추출된 개념 중 '🚫 금지 개념'이 하나라도 포함되어 있으면:
+   → 해당 문항 즉시 폐기 → 허용 개념만으로 재작성
+④ 오답 선지(choice1~5) 설계 규칙:
+   - 무작위 숫자 절대 금지
+   - 반드시 "${spec.distractor}"을 기반으로 설계
+   - 최소 2개 선지가 학생의 실제 실수 패턴에서 도출된 값이어야 함
+   - "당연히 이것이겠지"라는 심리적 함정을 최소 1개 포함
+⑤ 검증 통과 후 다음 문항으로 진행
+
+【제3단계 — 적대적 최종 감사 (Adversarial Audit Block)】
+${total}문항 초안이 모두 완성된 직후, 페르소나를 '출제자'에서 '적대적 감사자'로 전환하십시오.
+아래 5개 체크포인트를 하나씩 점검하십시오:
+
+□ [포맷 무결성]
+  ---BYTEEXAM-START--- / ---BYTEEXAM-END--- 정확히 존재하는가?
+  코드 블록(\`\`\`)으로 감싸지 않았는가?
+  모든 [QUESTION] 블록의 필수 필드(num, type, text, answer 또는 answer_text, point, explain)가 존재하는가?
+
+□ [LaTeX 수식 완전성]
+  모든 수식과 수학 기호가 빠짐없이 $인라인$ 또는 $$블록$$ 으로 처리되었는가?
+  일반 텍스트에 수식이 날것으로 노출된 곳은 없는가?
+
+□ [배점 합산 정확성]
+  point= 값들의 합이 정확히 100점인가? (${pointDesc})
+
+□ [난이도 캘리브레이션]
+  ${half+1}번~${total}번 후반 문항이 "${diff}" 수준의
+  논리 전환 ${spec.transitions}와 설계된 함정 압박감을 실제로 구현하는가?
+  단순히 어렵게 보이는 게 아닌 구조적 깊이가 있는가?
+
+□ [범위 이탈 Zero-Tolerance]
+  시험 범위 "${scope}"를 벗어난 개념이 단 한 문항에서도 사용되지 않았는가?
+  미세한 이탈(경계 개념의 무의식적 차용)도 없는가?
+
+→ 위 5항목 중 하나라도 ✗이거나 신뢰도 점수가 100%에 미달하면:
+   즉시 제2단계로 복귀 → 결함 문항 식별 및 재설계 → 제3단계 재점검
+→ 5항목 전부 ✓ 확인 후에만 최종 출력 진행
+→ 출력 시 인사말, 설명, 부연 일체 없이 ---BYTEEXAM-START--- 부터 시작할 것
+</tripartite_verification_engine>
+
+<output_format_constraints>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【절대적 출력 규칙 — 위반 시 감사 루프로 복귀】
+1. 인사말, 부연, 설명 없이 ---BYTEEXAM-START--- 로 즉시 시작
+2. 코드 블록(\`\`\`) 절대 사용 금지
+3. 수식: 모든 수학 기호와 식을 $인라인$ / $$블록$$ 으로 처리
+4. 오지선다: 반드시 ①②③④⑤ 원문자 형식
+5. 배점 합산: 정확히 100점 (${pointDesc})
+6. 각 문항에 explain= 해설 필수 (단계별 풀이 논리 포함)
+7. 1~${half}번 왼쪽 컬럼 / ${half+1}~${total}번 오른쪽 컬럼 (텍스트 길이 균형 유지)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+【byteexam 코드 형식 명세】
+
+---BYTEEXAM-START---
+[HEADER]
+title=시험지 제목
+subject=${scope}
+difficulty=${diff}
+date=YYYY-MM-DD
+total=${total}
+
+[QUESTION]
+num=1
+type=5choice
+text=문제 내용 (수식: $인라인$ 또는 $$블록$$)
+choice1=① [학생 실수 패턴 기반 오답]
+choice2=② [중간 단계 조기 종료값]
+choice3=③ [정답]
+choice4=④ [부호·역수 실수 결과]
+choice5=⑤ [직관적 함정값]
+answer=3
+point=3
+explain=풀이 단계: ① → ② → 최종 답 도출 논리 및 오답 선지의 오류 원인
+
+[QUESTION]
+num=2
+type=5choice_with_bogi
+text=다음 &lt;보기&gt;에서 옳은 것만 모두 고른 것은?
+bogi_1=ㄱ. [직관적으로 참처럼 보이는 거짓 명제]
+bogi_2=ㄴ. [거짓처럼 보이는 참 명제]
+bogi_3=ㄷ. [명확히 참인 명제]
+choice1=① ㄱ
+choice2=② ㄴ
+choice3=③ ㄱ, ㄴ
+choice4=④ ㄴ, ㄷ
+choice5=⑤ ㄱ, ㄴ, ㄷ
+answer=4
+point=4
+explain=ㄱ: 거짓 — 반례: ... / ㄴ: 참 — 이유: ... / ㄷ: 참 — 이유: ...
+
+[QUESTION]
+num=3
+type=short
+text=빈칸 채우기 또는 단답형 문제
+answer_text=정답
+point=3
+explain=해설 및 근거
+
+[QUESTION]
+num=4
+type=essay
+text=서술형 문제 내용
+answer_text=모범 답안 (단계별 증명 또는 풀이)
+point=4
+explain=채점 기준: 각 단계별 배점 근거
+
+---BYTEEXAM-END---
+</output_format_constraints>`;
+}
+
+function updatePrompt() {
+  const p = buildPrompt();
+  $('promptPreview').textContent = p.length > 800 ? p.slice(0,800)+'…\n[전체 프롬프트: 복사 버튼으로 확인]' : p;
+}
+['scopeInput','diffSel','extraInput','totalInput'].forEach(id => $(id).addEventListener('input', updatePrompt));
+
+function copyPrompt() {
+  if (!$('scopeInput').value.trim()) { toast('시험 범위를 먼저 입력하세요','err'); return; }
+  const p = buildPrompt();
+  navigator.clipboard.writeText(p)
+    .then(()=>toast('프롬프트 복사 완료!'))
+    .catch(()=>{
+      const ta=document.createElement('textarea');
+      ta.value=p;ta.style.cssText='position:fixed;opacity:0';
+      document.body.appendChild(ta);ta.select();document.execCommand('copy');
+      document.body.removeChild(ta);toast('프롬프트 복사 완료!');
+    });
+}
+$('copyBtn1').addEventListener('click', copyPrompt);
+$('copyBtn2').addEventListener('click', copyPrompt);
+
+/* ════════════════════════════════
+   시험지 파서
+════════════════════════════════ */
+function parseExam(raw) {
+  const s = raw.indexOf('---BYTEEXAM-START---');
+  const e = raw.indexOf('---BYTEEXAM-END---');
+  const body = (s>=0&&e>s) ? raw.slice(s+20,e) : raw;
+  const header = {}, questions = [];
+  let cur = null;
+  for (const line of body.split('\n')) {
+    const t = line.trim();
+    if (!t||t.startsWith('---')) continue;
+    if (t==='[HEADER]') { cur=null; continue; }
+    if (t==='[QUESTION]') { cur={}; questions.push(cur); continue; }
+    const eq = t.indexOf('=');
+    if (eq<0) continue;
+    const k=t.slice(0,eq).trim(), v=t.slice(eq+1).trim();
+    if (!cur) header[k]=v; else cur[k]=v;
+  }
+  return {header, questions};
+}
+
+function renderExamHTML(raw, meta={}) {
+  const {header,questions} = parseExam(raw);
+  const title   = header.title      || meta.title      || '시험지';
+  const subject = header.subject    || meta.scope       || '';
+  const diff    = header.difficulty || meta.difficulty  || '';
+  const total   = header.total      || questions.length;
+  const date    = header.date       || new Date().toLocaleDateString('ko-KR');
+
+  /* 문제 카드 렌더 — break-inside:avoid 로 절대 중간 잘림 없음 */
+  function rQ(q) {
+    let h = `<div class="exam-q">`;
+    h += `<span class="exam-q-num">${esc(q.num||'')}</span>`;
+    if (q.point==='4') h += `<span class="exam-q-star">★</span>`;
+    const typeTag = q.type==='short'?'[단답형] ':q.type==='essay'?'[서술형] ':'';
+    h += ` <span>${typeTag}${esc(q.text||'')}</span>`;
+    if (q.bogi_1||q.bogi_2||q.bogi_3) {
+      h += `<div class="exam-bogi">`;
+      ['1','2','3'].forEach(n=>{ if(q['bogi_'+n]) h+=`<div class="exam-bogi-row">${esc(q['bogi_'+n])}</div>`; });
+      h += `</div>`;
+    }
+    if (q.type&&q.type.includes('choice')) {
+      h += `<div class="exam-choices">`;
+      ['1','2','3','4','5'].forEach(n=>{ if(q['choice'+n]) h+=`<div class="exam-choice"><span>${esc(q['choice'+n])}</span></div>`; });
+      h += `</div>`;
+    }
+    if (q.type==='short') h += `<div class="exam-blank"></div>`;
+    if (q.point) h += `<div class="exam-pt">[${esc(q.point)}점]</div>`;
+    h += `</div>`;
+    return h;
+  }
+
+  function rAnswers() {
+    let h = `<div class="ans-sheet"><h2>◆ 정답 및 해설</h2><div class="ans-grid">`;
+    questions.forEach(q => {
+      h += `<div class="ans-item"><strong>${esc(String(q.num||''))}</strong>. ${esc(q.answer_text||q.answer||'')}</div>`;
+    });
+    h += `</div><div class="ans-exps">`;
+    questions.forEach(q => {
+      if (q.explain) h += `<div class="ans-exp"><strong>${esc(String(q.num||''))}번.</strong> ${esc(q.explain)}</div>`;
+    });
+    h += `</div></div>`;
+    return h;
+  }
+
+  /* 전체 문제를 .exam-cols 하나에 쏟아붓기
+     CSS column-count:2 + break-inside:avoid 가 자동으로 왼→오 배분 */
+  return `
+<div class="exam-hdr">
+  <div class="exam-logo-wrap">
+    <div class="exam-logo-text">byteexam</div>
+    <div class="exam-logo-sub">by cjy</div>
+  </div>
+  <div class="exam-title-area"><h1>${esc(title)}</h1><p>${esc(subject)} | 난이도: ${esc(diff)}</p></div>
+  <div class="exam-meta-box"><div>이름: ___________</div><div>날짜: ${esc(date)}</div></div>
+</div>
+<div class="exam-cols">
+  ${questions.map(rQ).join('')}
+</div>
+${rAnswers()}`;
+}
+
+function tryRenderMath(el) {
+  if (!window._katexReady || typeof renderMathInElement === 'undefined') {
+    setTimeout(()=>tryRenderMath(el), 400);
+    return;
+  }
+  renderMathInElement(el, {
+    delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],
+    throwOnError:false
+  });
+}
+
+/* ════════════════════════════════
+   EXAM LIST
+════════════════════════════════ */
+let examCache = [];
+let activeId  = null;
+
+async function loadExams() {
+  try {
+    examCache = await api('GET', '/api/exams');
+    renderList();
+  } catch(e) { toast('목록 로드 실패: '+e.message,'err'); }
+}
+
+function renderList() {
+  $('sbCount').textContent = `${examCache.length} / 30`;
+  $('examList').querySelectorAll('.exam-item').forEach(el=>el.remove());
+  $('examEmpty').style.display = examCache.length ? 'none' : 'flex';
+  examCache.forEach(e => {
+    const div = document.createElement('div');
+    div.className = 'exam-item' + (e.id===activeId?' active':'');
+    div.dataset.id = e.id;
+    div.innerHTML = `<div class="exam-item-title">${esc(e.title)}</div>
+      <div class="exam-item-meta">${esc(e.scope||'')} · ${fmt(e.createdAt)}</div>
+      <div class="exam-item-diff">${esc(e.difficulty||'기본')}</div>`;
+    div.addEventListener('click', ()=>openExam(e.id));
+    $('examList').appendChild(div);
+  });
+}
+
+async function openExam(id) {
+  try {
+    $('saveCard').style.display = 'none';
+    activeId = id; renderList();
+    const exam = await api('GET', `/api/exams/${id}`);
+    $('viewerTitle').textContent = exam.title||'시험지';
+    $('examSheet').innerHTML = renderExamHTML(exam.content, exam);
+    $('viewerCard').style.display = 'block';
+    tryRenderMath($('examSheet'));
+    $('delExamBtn').dataset.id  = id;
+    $('dlPdfBtn').dataset.id    = id;
+  } catch(e) { toast('불러오기 실패: '+e.message,'err'); }
+}
+
+/* ════════════════════════════════
+   SAVE
+════════════════════════════════ */
+$('newExamBtn').addEventListener('click', ()=>{
+  $('viewerCard').style.display = 'none';
+  activeId = null;
+  $('saveCard').style.display = '';
+  $('saveCard').scrollIntoView({ behavior:'smooth', block:'start' });
+  setTimeout(()=>$('saveTitleInput').focus(), 300);
+});
+
+$('saveBtn').addEventListener('click', async ()=>{
+  const title   = $('saveTitleInput').value.trim();
+  const content = $('saveContentInput').value.trim();
+  const scope   = $('scopeInput').value.trim();
+  const diff    = $('diffSel').value;
+  const extra   = $('extraInput').value.trim();
+  if (!title)   { toast('제목을 입력하세요','err'); return; }
+  if (!content) { toast('AI 출력 내용을 붙여넣으세요','err'); return; }
+  try {
+    const res = await api('POST', '/api/exams', {title,scope,difficulty:diff,extra,content});
+    toast('저장 완료!');
+    $('saveTitleInput').value = ''; $('saveContentInput').value = '';
+    $('saveCard').style.display = 'none';
+    await loadExams();
+    openExam(res.id);
+  } catch(e) { toast('저장 실패: '+e.message,'err'); }
+});
+
+/* ════════════════════════════════
+   DELETE
+════════════════════════════════ */
+$('delExamBtn').addEventListener('click', async ()=>{
+  const id = $('delExamBtn').dataset.id; if(!id) return;
+  if (!confirm('이 시험지를 삭제하시겠습니까?')) return;
+  try {
+    await api('DELETE', `/api/exams/${id}`);
+    toast('삭제되었습니다');
+    $('viewerCard').style.display='none'; activeId=null;
+    await loadExams();
+  } catch(e) { toast('삭제 실패: '+e.message,'err'); }
+});
+
+/* ════════════════════════════════
+   PDF
+════════════════════════════════ */
+$('dlPdfBtn').addEventListener('click', async ()=>{
+  const id = $('dlPdfBtn').dataset.id; if(!id) return;
+  if (typeof html2pdf === 'undefined') { toast('PDF 라이브러리 로딩 중입니다. 잠시 후 다시 시도해주세요.','err'); return; }
+  try {
+    const exam = await api('GET', `/api/exams/${id}`);
+    const safeName = (exam.title||'시험지').replace(/[\\/:*?"<>|]/g,'_');
+    const {header, questions} = parseExam(exam.content);
+    const title   = header.title      || exam.title      || '시험지';
+    const subject = header.subject    || exam.scope       || '';
+    const diff    = header.difficulty || exam.difficulty  || '';
+    const date    = header.date       || new Date().toLocaleDateString('ko-KR');
+
+    function rQFlat(q) {
+      let h = `<div style="margin-bottom:13px;break-inside:avoid;page-break-inside:avoid">`;
+      h += `<span style="font-weight:700;font-size:13px;display:inline-block;min-width:22px">${esc(q.num||'')}</span>`;
+      if (q.point==='4') h += `<span style="color:#e53e3e;font-size:10px;vertical-align:super">★</span>`;
+      const tt = q.type==='short'?'[단답형] ':q.type==='essay'?'[서술형] ':'';
+      h += ` <span style="font-size:12px">${tt}${esc(q.text||'')}</span>`;
+      if (q.bogi_1||q.bogi_2||q.bogi_3) {
+        h += `<div style="background:#f6f6f6;border:1px solid #ddd;border-radius:3px;padding:6px 10px;margin:4px 0;font-size:11px">`;
+        ['1','2','3'].forEach(n=>{ if(q['bogi_'+n]) h+=`<div>${esc(q['bogi_'+n])}</div>`; });
+        h += `</div>`;
+      }
+      if (q.type&&q.type.includes('choice')) {
+        h += `<div style="margin-top:4px;padding-left:2px">`;
+        ['1','2','3','4','5'].forEach(n=>{ if(q['choice'+n]) h+=`<div style="font-size:11.5px;margin-bottom:2px">${esc(q['choice'+n])}</div>`; });
+        h += `</div>`;
+      }
+      if (q.type==='short') h+=`<div style="border-bottom:1px solid #888;width:90px;height:18px;display:inline-block;margin-top:4px"></div>`;
+      if (q.point) h+=`<div style="font-size:10px;color:#888;border:1px solid #ccc;border-radius:3px;padding:1px 5px;display:inline-block;margin-top:2px">[${esc(q.point)}점]</div>`;
+      h += `</div>`;
+      return h;
+    }
+
+    let ansHtml = `<div style="background:#fffbf0;border-top:3px double #111;padding:12px 0 0;margin-top:8px">
+      <div style="font-size:13px;font-weight:800;padding-bottom:6px;border-bottom:1px solid #ddd;margin-bottom:10px">◆ 정답 및 해설</div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:10px">`;
+    questions.forEach(q=>{
+      ansHtml+=`<div style="background:#fff;border:1px solid #ddd;border-radius:3px;padding:4px 7px;font-size:11px;line-height:1.5;word-break:break-word"><span style="color:#6c63ff;font-weight:700">${esc(String(q.num||''))}</span>. ${esc(q.answer_text||q.answer||'')}</div>`;
+    });
+    ansHtml+=`</div>`;
+    questions.forEach(q=>{
+      if(q.explain) ansHtml+=`<div style="margin-bottom:7px;line-height:1.6;font-size:11px"><strong style="color:#444">${esc(String(q.num||''))}번.</strong> ${esc(q.explain)}</div>`;
+    });
+    ansHtml+=`</div>`;
+
+    /* ── 문항 높이 측정 (실제 렌더 기준) ── */
+    const FONT_STYLE = "font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:11pt;line-height:1.7;color:#111";
+    const COL_W = '330px'; // 컬럼 너비 근사값
+    const measDiv = document.createElement('div');
+    measDiv.style.cssText = `position:fixed;top:-9999px;left:0;width:${COL_W};visibility:hidden;${FONT_STYLE}`;
+    document.body.appendChild(measDiv);
+    const qHeights = questions.map(q => { measDiv.innerHTML = rQFlat(q); return measDiv.offsetHeight + 4; });
+    document.body.removeChild(measDiv);
+
+    /* ── 페이지별 좌/우 배분 ──
+       A4(297mm) - 상하패딩(20mm) = 277mm ≈ 1047px @96dpi
+       첫 페이지는 헤더(약 22mm ≈ 83px) 차감 */
+    const PAGE_H = 1020;
+    const FIRST_HEADER_H = 90;
+    const pages = [];
+    let qi = 0;
+    let isFirst = true;
+    while (qi < questions.length) {
+      const avail = PAGE_H - (isFirst ? FIRST_HEADER_H : 0);
+      isFirst = false;
+      const left = [], right = [];
+      let lh = 0, rh = 0;
+      // 왼쪽 채우기
+      while (qi < questions.length) {
+        const h = qHeights[qi];
+        if (lh + h > avail && left.length > 0) break;
+        left.push(questions[qi]); lh += h; qi++;
+      }
+      // 오른쪽 채우기
+      while (qi < questions.length) {
+        const h = qHeights[qi];
+        if (rh + h > avail && right.length > 0) break;
+        right.push(questions[qi]); rh += h; qi++;
+      }
+      pages.push({ left, right });
+    }
+
+    /* ── 헤더 HTML ── */
+    const headerHtml = `
+      <table style="width:100%;border-collapse:collapse;border-top:3px solid #111;border-bottom:1.5px solid #111;margin-bottom:4mm">
+        <tbody><tr>
+          <td style="width:22mm;padding:3mm 2mm 3mm 0;vertical-align:middle">
+            <div style="font-size:13pt;font-weight:900;color:#6c63ff;line-height:1.2">byteexam</div>
+            <div style="font-size:7pt;color:#999;margin-top:1px">by cjy</div>
+          </td>
+          <td style="text-align:center;padding:3mm;vertical-align:middle">
+            <div style="font-size:14pt;font-weight:900;letter-spacing:-.3px">${esc(title)}</div>
+            <div style="font-size:9pt;color:#555;margin-top:1px">${esc(subject)}${diff?' &nbsp;|&nbsp; 난이도: '+esc(diff):''}</div>
+          </td>
+          <td style="width:32mm;text-align:right;padding:3mm 0 3mm 2mm;vertical-align:middle;font-size:9pt;color:#444;line-height:2">
+            <div>이름: ___________</div>
+            <div>날짜: ${esc(date)}</div>
+          </td>
+        </tr></tbody>
+      </table>`;
+
+    /* ── 페이지 HTML 조립 ── */
+    const colTd = (qs, border) =>
+      `<td style="width:50%;padding:0 ${border?'4mm':'0'} 0 ${border?'0':'4mm'};${border?'border-right:1.2px solid #aaa':''};vertical-align:top">${qs.map(rQFlat).join('')}</td>`;
+
+    let pagesHtml = '';
+    pages.forEach((pg, i) => {
+      pagesHtml += `<div style="width:190mm;margin:0 auto;padding:8mm 0;${i>0?'border-top:1px dashed #ccc':''}">
+        ${i===0 ? headerHtml : ''}
+        <table style="width:100%;border-collapse:collapse;table-layout:fixed"><tbody><tr>
+          ${colTd(pg.left, true)}${colTd(pg.right, false)}
+        </tr></tbody></table>
+      </div>`;
+    });
+    pagesHtml += `<div style="width:190mm;margin:0 auto;padding:8mm 0;border-top:1px dashed #ccc">${ansHtml}</div>`;
+
+    /* ── DOM 삽입 & 캡처 ── */
+    const inner = document.createElement('div');
+    inner.id = 'pdfWrap';
+    inner.style.cssText = `${FONT_STYLE};background:#fff;margin:0;padding:0`;
+    inner.innerHTML = pagesHtml;
+
+    const appEl = document.getElementById('app');
+    try {
+      appEl.style.display = 'none';
+      document.body.insertBefore(inner, document.body.firstChild);
+      window.scrollTo(0, 0);
+
+      if (typeof renderMathInElement !== 'undefined') {
+        renderMathInElement(inner, { delimiters: [
+          {left:'$$',right:'$$',display:true},
+          {left:'$',right:'$',display:false},
+          {left:'\\[',right:'\\]',display:true},
+          {left:'\\(',right:'\\)',display:false}
+        ], throwOnError: false });
+      }
+
+      toast('PDF 생성 중...');
+      await new Promise(r => setTimeout(r, 500));
+
+      await html2pdf().set({
+        margin: 0,
+        filename: safeName + '.pdf',
+        image: { type: 'jpeg', quality: 0.97 },
+        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false, scrollX: 0, scrollY: 0 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: 'css' }
+      }).from(inner).save();
+      toast('PDF 저장 완료!');
+    } finally {
+      if (document.body.contains(inner)) document.body.removeChild(inner);
+      appEl.style.display = '';
+    }
+
+  } catch(e) { toast('PDF 실패: '+e.message,'err'); }
+});
+
+/* ════════════════════════════════
+   ADMIN
+════════════════════════════════ */
+
+$('adminRefreshBtn').addEventListener('click', loadAdmin);
+
+async function loadAdmin() {
+  try {
+    const [stats, users, exams] = await Promise.all([
+      api('GET','/api/admin/stats'),
+      api('GET','/api/admin/users'),
+      api('GET','/api/admin/exams')
+    ]);
+
+    /* 통계 */
+    $('statUsers').textContent = stats.userCount;
+    $('statExams').textContent = stats.examCount;
+    $('userCount').textContent = `총 ${users.length}명`;
+    $('examCountAdmin').textContent = `총 ${exams.length}개`;
+
+    /* 유저 테이블 */
+    const ub = $('usersBody');
+    ub.innerHTML = '';
+    users.forEach(u => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><code style="font-size:12px;background:var(--surface2);padding:2px 6px;border-radius:4px">${esc(u.username)}</code></td>
+        <td>${esc(u.displayName)}</td>
+        <td>${u.isAdmin
+          ? `<span class="badge-admin">관리자</span>`
+          : `<span class="badge-user">일반</span>`}</td>
+        <td style="color:var(--muted);font-size:12px">${fmt(u.createdAt)}</td>
+        <td>
+          <button class="btn btn-warn btn-xs" data-toggle="${esc(u.id)}" data-admin="${u.isAdmin?'1':'0'}"
+            style="margin-right:4px">${u.isAdmin?'권한 해제':'관리자 지정'}</button>
+          <button class="btn btn-danger btn-xs" data-del-user="${esc(u.id)}">삭제</button>
+        </td>`;
+      ub.appendChild(tr);
+    });
+
+    /* 유저 테이블 이벤트 */
+    ub.addEventListener('click', async e => {
+      const toggleBtn = e.target.closest('[data-toggle]');
+      const delBtn    = e.target.closest('[data-del-user]');
+      if (toggleBtn) {
+        const id      = toggleBtn.dataset.toggle;
+        const isAdmin = toggleBtn.dataset.admin === '1';
+        if (!confirm(isAdmin?'관리자 권한을 해제하시겠습니까?':'관리자 권한을 부여하시겠습니까?')) return;
+        try { await api('PATCH',`/api/admin/users/${id}`,{isAdmin:!isAdmin}); toast('변경 완료'); loadAdmin(); }
+        catch(e) { toast(e.message,'err'); }
+      }
+      if (delBtn) {
+        const id = delBtn.dataset.delUser;
+        if (!confirm('이 유저와 해당 유저의 모든 시험지를 삭제하시겠습니까?')) return;
+        try { await api('DELETE',`/api/admin/users/${id}`); toast('삭제 완료'); loadAdmin(); }
+        catch(e) { toast(e.message,'err'); }
+      }
+    }, {once:false});
+
+    /* 시험지 테이블 */
+    const eb = $('examsAdminBody');
+    eb.innerHTML = '';
+    exams.forEach(e => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e.title)}</td>
+        <td style="font-size:12px;color:var(--muted)">${esc(e.username)}</td>
+        <td><span class="diff-badge">${esc(e.difficulty||'기본')}</span></td>
+        <td style="font-size:12px;color:var(--muted)">${fmt(e.createdAt)}</td>
+        <td><button class="btn btn-danger btn-xs" data-del-exam="${esc(e.id)}">삭제</button></td>`;
+      eb.appendChild(tr);
+    });
+
+    eb.addEventListener('click', async ev => {
+      const btn = ev.target.closest('[data-del-exam]');
+      if (!btn) return;
+      if (!confirm('이 시험지를 삭제하시겠습니까?')) return;
+      try { await api('DELETE',`/api/admin/exams/${btn.dataset.delExam}`); toast('삭제 완료'); loadAdmin(); }
+      catch(e) { toast(e.message,'err'); }
+    }, {once:false});
+
+  } catch(e) { toast('관리자 데이터 로드 실패: '+e.message,'err'); }
+}
+
+/* ════════════════════════════════
+   START
+════════════════════════════════ */
+init();
+
+function toggleSidebar() {
+  const sb = document.querySelector('.sidebar');
+  const ov = document.getElementById('sbOverlay');
+  const open = sb.classList.toggle('open');
+  ov.style.display = open ? 'block' : 'none';
+}
+</script>
+</body>
+</html>

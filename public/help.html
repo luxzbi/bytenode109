@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
+<title>bytenode 코드 설명서</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI","Apple SD Gothic Neo",sans-serif;line-height:1.7;transition:background .3s,color .3s}
+
+/* ── 다크 모드 (기본) ── */
+body.dark{background:#101010;color:#e0e0e0}
+body.dark a{color:#7ec8e3}
+body.dark .sidebar{background:#161616;border-right:1px solid #2a2a2a}
+body.dark .sidebar a{color:#ccc}
+body.dark .sidebar a:hover,.sidebar a.active{color:#fff;background:#2a2a2a}
+body.dark .topbar{background:#161616;border-bottom:1px solid #2a2a2a}
+body.dark h2{border-bottom:1px solid #2a2a2a}
+body.dark table th{background:#1c1c1c}
+body.dark table td,body.dark table th{border-color:#2a2a2a}
+body.dark code{background:#1e1e1e;border:1px solid #333;color:#9fd3ff}
+body.dark .example{background:#181818;border:1px solid #2e2e2e}
+body.dark .example-label{background:#222;border-bottom:1px solid #2e2e2e;color:#888}
+body.dark .example-body{color:#ddd}
+body.dark .note{background:rgba(255,255,255,.05);border-left:4px solid #555}
+body.dark .chip{border:1px solid #333}
+body.dark .toggle-btn{background:#222;color:#ccc;border:1px solid #444}
+
+/* ── 라이트 모드 ── */
+body.light{background:#f5f5f5;color:#333}
+body.light a{color:#005a9e}
+body.light .sidebar{background:#fff;border-right:1px solid #ddd}
+body.light .sidebar a{color:#555}
+body.light .sidebar a:hover,.light .sidebar a.active{color:#000;background:#eee}
+body.light .topbar{background:#fff;border-bottom:1px solid #ddd}
+body.light h2{border-bottom:1px solid #ddd}
+body.light table th{background:#f0f0f0}
+body.light table td,body.light table th{border-color:#ddd}
+body.light code{background:#f0f0f0;border:1px solid #ddd;color:#c7254e}
+body.light .example{background:#fff;border:1px solid #ddd}
+body.light .example-label{background:#f7f7f7;border-bottom:1px solid #ddd;color:#999}
+body.light .example-body{color:#333}
+body.light .note{background:#fff8e1;border-left:4px solid #ffc107}
+body.light .chip{border:1px solid #ccc}
+body.light .toggle-btn{background:#eee;color:#333;border:1px solid #ccc}
+
+/* ── 레이아웃 ── */
+.topbar{position:fixed;top:0;left:0;right:0;height:48px;display:flex;align-items:center;padding:0 20px;z-index:100;gap:12px}
+.topbar .logo{font-weight:700;font-size:1.05rem;flex:1}
+.home-btn{padding:5px 14px;border-radius:20px;font-size:13px;text-decoration:none;transition:all .2s}
+body.dark .home-btn{background:#222;color:#ccc;border:1px solid #444}
+body.light .home-btn{background:#eee;color:#333;border:1px solid #ccc}
+.toggle-btn{padding:5px 14px;border-radius:20px;cursor:pointer;font-size:13px;transition:all .2s}
+.layout{display:flex;padding-top:48px;min-height:100vh}
+.sidebar{width:220px;position:fixed;top:48px;bottom:0;overflow-y:auto;padding:16px 0}
+.sidebar ul{list-style:none}
+.sidebar li a{display:block;padding:7px 20px;font-size:14px;text-decoration:none;border-radius:4px;margin:1px 8px;transition:background .15s,color .15s}
+.sidebar .section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#888;padding:14px 20px 4px}
+.content{margin-left:220px;padding:32px 40px 80px;max-width:900px}
+
+/* ── 제목 ── */
+.content h1{font-size:2rem;margin-bottom:6px}
+.content h2{font-size:1.2rem;margin:40px 0 14px;padding-bottom:8px}
+
+/* ── 텍스트 ── */
+p{color:inherit;margin:8px 0}
+ul{padding-left:22px;margin:8px 0}
+li{margin:4px 0}
+
+/* ── 테이블 ── */
+table{width:100%;border-collapse:collapse;margin:14px 0 20px;font-size:14px}
+th,td{padding:10px 14px;text-align:left;vertical-align:top}
+th{font-weight:600}
+
+/* ── 코드 ── */
+code{font-family:Consolas,"Courier New",monospace;border-radius:4px;padding:1px 6px;font-size:13.5px}
+pre{font-family:Consolas,"Courier New",monospace;padding:14px 18px;border-radius:6px;overflow-x:auto;font-size:13.5px}
+body.dark pre{background:#1a1a1a;border:1px solid #2e2e2e;color:#e0e0e0}
+body.light pre{background:#f7f7f7;border:1px solid #ddd;color:#333}
+
+/* ── 예시 박스 ── */
+.example{border-radius:6px;margin:14px 0 22px;overflow:hidden}
+.example-label{font-size:12px;font-weight:700;letter-spacing:.05em;padding:6px 14px;text-transform:uppercase}
+.example-body{padding:14px 18px;font-size:14px;font-family:Consolas,"Courier New",monospace;white-space:pre-wrap;word-break:break-all}
+.example-result{padding:14px 18px;font-size:14px}
+
+/* ── 노트 ── */
+.note{padding:12px 16px;border-radius:0 6px 6px 0;margin:16px 0;font-size:14px}
+
+/* ── 색상 칩 ── */
+.chip-row{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.chip{display:flex;align-items:center;gap:8px;border-radius:20px;padding:4px 12px;font-size:13px}
+.chip-dot{width:14px;height:14px;border-radius:50%;display:inline-block;flex-shrink:0}
+
+/* ── 배지 데모 ── */
+.demo-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;background:#e0e7ff;color:#3730a3;margin:2px}
+body.dark .demo-badge{background:#2a2d5e;color:#a5b4fc}
+
+/* ── 반응형 ── */
+@media(max-width:680px){
+  .sidebar{display:none}
+  .content{margin-left:0;padding:20px 18px 60px}
+}
+</style>
+</head>
+<body class="dark">
+
+<div class="topbar">
+  <span class="logo">bytenode 코드 설명서</span>
+  <button class="toggle-btn" id="modeBtn" onclick="toggleMode()">☀ 라이트 모드</button>
+  <a href="/" class="home-btn">← 홈으로</a>
+</div>
+
+<div class="layout">
+  <!-- 사이드바 -->
+  <nav class="sidebar">
+    <ul>
+      <li class="section-title">시작하기</li>
+      <li><a href="#intro">소개</a></li>
+      <li><a href="#rules">작성 규칙</a></li>
+      <li class="section-title">텍스트</li>
+      <li><a href="#style">글자 스타일</a></li>
+      <li><a href="#color">색상 텍스트</a></li>
+      <li><a href="#align">정렬 / 블록</a></li>
+      <li><a href="#block">강조 블록</a></li>
+      <li><a href="#math">수학 기호</a></li>
+      <li><a href="#chem">화학식</a></li>
+      <li><a href="#table">표</a></li>
+      <li><a href="#graph">수학 그래프</a></li>
+      <li><a href="#model3d">3D 모델</a></li>
+      <li class="section-title">간격 / 선</li>
+      <li><a href="#gap">간격</a></li>
+      <li><a href="#line">선</a></li>
+      <li class="section-title">미디어</li>
+      <li><a href="#image">이미지</a></li>
+      <li><a href="#video">영상</a></li>
+      <li><a href="#gallery">갤러리</a></li>
+      <li class="section-title" style="color:#a78bfa">bytenode-flashinfo</li>
+      <li><a href="#fi-intro" style="color:#a78bfa">flashinfo 소개</a></li>
+      <li><a href="#fi-stat">stat / progress</a></li>
+      <li><a href="#fi-charts">차트 태그</a></li>
+      <li><a href="#fi-ratio">출력 비율</a></li>
+      <li class="section-title" style="color:#f472b6">bytenode-flashppt</li>
+      <li><a href="#ppt-tags" style="color:#f472b6">슬라이드 태그</a></li>
+      <li class="section-title" style="color:#34d399">bytenode-flashreport</li>
+      <li><a href="#report-tags" style="color:#34d399">보고서 태그</a></li>
+      <li class="section-title" style="color:#facc15">bytenode-flashresume</li>
+      <li><a href="#resume-tags" style="color:#facc15">이력서 태그</a></li>
+      <li class="section-title" style="color:#fb923c">bytenode-flashnewsletter</li>
+      <li><a href="#nl-tags" style="color:#fb923c">뉴스레터 태그</a></li>
+      <li class="section-title" style="color:#e879f9">bytenode-flashstory</li>
+      <li><a href="#story-tags" style="color:#e879f9">스토리 태그</a></li>
+      <li class="section-title" style="color:#818cf8">인터랙티브</li>
+      <li><a href="#byteflash" style="color:#818cf8">byteflash (플래시카드)</a></li>
+      <li><a href="#bytestep" style="color:#818cf8">bytestep (단계별)</a></li>
+      <li><a href="#byteflow" style="color:#818cf8">byteflow (흐름도)</a></li>
+      <li><a href="#byteroadmap" style="color:#818cf8">byteroadmap (로드맵)</a></li>
+      <li class="section-title">기타</li>
+      <li><a href="#link">링크</a></li>
+      <li><a href="#badge">배지</a></li>
+      <li><a href="#colors-ref">색상 목록</a></li>
+      <li><a href="#example">전체 예시</a></li>
+    </ul>
+  </nav>
+
+  <!-- 본문 -->
+  <main class="content">
+
+    <h1>bytenode 코드 설명서</h1>
+    <p>글 작성기에 사용하는 간단한 태그 문법입니다. 모든 명령은 <code>&lt;</code>로 시작하고 <code>&gt;</code>로 끝납니다.</p>
+
+    <!-- ───── 소개 ───── -->
+    <h2 id="intro">소개</h2>
+    <p>bytenode 태그는 블로그 글 안에서 텍스트 스타일, 이미지, 영상, 레이아웃을 제어합니다. 일반 텍스트는 그대로 입력하면 됩니다.</p>
+    <div class="note">태그 안에 <code>&gt;</code>를 쓰면 파서가 그 위치에서 태그를 닫아버립니다. 태그 내용에 꺽쇠 부등호를 쓰지 마세요.</div>
+
+    <!-- ───── 작성 규칙 ───── -->
+    <h2 id="rules">작성 규칙</h2>
+    <ul>
+      <li>태그는 <code>&lt;명령: 내용&gt;</code> 형식입니다.</li>
+      <li>태그 안에 태그를 중첩할 수 없습니다. <code>&lt;indent: &lt;mark: 내용&gt;&gt;</code> 이런 형식은 동작하지 않습니다.</li>
+      <li>링크는 반드시 <code>{URL} 링크문구</code> 형식으로 씁니다. Markdown <code>[텍스트](URL)</code> 문법은 사용하지 않습니다.</li>
+      <li>빈 줄은 실제 세로 여백이 됩니다. 너무 많이 넣으면 큰 빈 공간이 생깁니다.</li>
+      <li>이미지 경로는 실제 업로드된 경로를 사용해야 합니다.</li>
+    </ul>
+
+    <!-- ───── 글자 스타일 ───── -->
+    <h2 id="style">글자 스타일</h2>
+    <table>
+      <tr><th>명령</th><th>설명</th><th>결과</th></tr>
+      <tr><td><code>&lt;xt: 제목&gt;</code></td><td>큰 제목</td><td><strong style="font-size:1.3em">제목</strong></td></tr>
+      <tr><td><code>&lt;5t: 내용&gt;</code></td><td>일반 텍스트 (크기 1~9)</td><td>내용</td></tr>
+      <tr><td><code>&lt;bt: 내용&gt;</code></td><td>굵게</td><td><strong>내용</strong></td></tr>
+      <tr><td><code>&lt;it: 내용&gt;</code></td><td>기울임</td><td><em>내용</em></td></tr>
+      <tr><td><code>&lt;mark: 내용&gt;</code></td><td>형광 표시</td><td><mark>내용</mark></td></tr>
+      <tr><td><code>&lt;code: npm install&gt;</code></td><td>인라인 코드</td><td><code>npm install</code></td></tr>
+    </table>
+
+    <div class="example">
+      <div class="example-label">예시</div>
+      <div class="example-body">&lt;xt: 블로그 제목&gt;
+&lt;5t: 일반 크기 텍스트입니다.&gt;
+&lt;bt: 굵은 글씨&gt; &lt;it: 기울인 글씨&gt;
+&lt;mark: 형광펜 강조&gt;
+&lt;code: git commit -m "fix"&gt;</div>
+    </div>
+
+    <!-- ───── 색상 텍스트 ───── -->
+    <h2 id="color">색상 텍스트</h2>
+    <p><code>&lt;color:색이름_5t: 내용&gt;</code> 형식으로 사용합니다. 색 이름 또는 hex 코드를 쓸 수 있습니다.</p>
+    <table>
+      <tr><th>명령</th><th>설명</th></tr>
+      <tr><td><code>&lt;color:blue_5t: 파란색&gt;</code></td><td>파란색 텍스트</td></tr>
+      <tr><td><code>&lt;color:red_7t: 큰 빨간글씨&gt;</code></td><td>크기 7, 빨간색</td></tr>
+      <tr><td><code>&lt;color:#ff6600_5t: 주황색&gt;</code></td><td>hex 코드로 색 지정</td></tr>
+    </table>
+
+    <div class="example">
+      <div class="example-label">예시</div>
+      <div class="example-body">&lt;color:blue_5t: 파란색 텍스트&gt;
+&lt;color:red_7t: 크고 빨간 글씨&gt;
+&lt;color:#f59e0b_5t: 황금색 텍스트&gt;</div>
+    </div>
+
+    <!-- ───── 정렬 / 블록 ───── -->
+    <h2 id="align">정렬</h2>
+    <table>
+      <tr><th>명령</th><th>설명</th></tr>
+      <tr><td><code>&lt;center: 내용&gt;</code></td><td>가운데 정렬</td></tr>
+      <tr><td><code>&lt;right: 내용&gt;</code></td><td>오른쪽 정렬</td></tr>
+      <tr><td><code>&lt;indent: 내용&gt;</code></td><td>들여쓰기</td></tr>
+    </table>
+
+    <div class="example">
+      <div class="example-label">예시</div>
+      <div class="example-body">&lt;center: 가운데 정렬 텍스트&gt;
+&lt;right: 오른쪽 정렬 텍스트&gt;
+&lt;indent: 들여쓰기 텍스트&gt;</div>
+    </div>
+
+    <!-- ───── 강조 블록 ───── -->
+    <h2 id="block">강조 블록</h2>
+    <table>
+      <tr><th>명령</th><th>설명</th></tr>
+      <tr><td><code>&lt;quote: 내용&gt;</code></td><td>인용문 블록</td></tr>
+      <tr><td><code>&lt;box: 내용&gt;</code></td><td>테두리 박스</td></tr>
+      <tr><td><code>&lt;callout: 내용&gt;</code></td><td>강조 박스 (노란 테두리)</td></tr>
+    </table>
+
+    <div class="example">
+      <div class="example-label">예시</div>
+      <div class="example-body">&lt;quote: 누군가의 명언이 여기에 들어갑니다.&gt;
+&lt;box: 박스 안에 들어가는 내용&gt;
+&lt;callout: 주의해야 할 중요한 내용&gt;</div>
+    </div>
+
+    <!-- ───── 수학 기호 ───── -->
+    <h2 id="math">수학 기호 (LaTeX)</h2>
+    <p>달러 기호로 감싸면 수학 수식이 렌더링됩니다. 인터넷 연결이 필요합니다.</p>
+    <table>
+      <tr><th>문법</th><th>설명</th><th>예시</th></tr>
+      <tr><td><code>$수식$</code></td><td>인라인 수식 (글 중간에)</td><td>$x^2 + 1$</td></tr>
+      <tr><td><code>$$수식$$</code></td><td>블록 수식 (가운데 큰 수식)</td><td>$$\frac{b}{2a}$$</td></tr>
+    </table>
+
+    <div class="example">
+      <div class="example-label">예시</div>
+      <div class="example-body">&lt;5t: 이차방정식 $ax^2 + bx + c = 0$의 해입니다.&gt;
+&lt;5t: 근의 공식: $$x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}$$&gt;</div>
+    </div>
+    <div class="note">태그 안에서 $...$를 자유롭게 사용할 수 있습니다. 수식 안에 <code>></code>가 들어가면 파서가 태그를 닫아버리므로 <code>\gt</code>를 대신 사용하세요.</div>
+
+    <!-- ───── 화학식 ───── -->
+    <h2 id="chem">화학식</h2>
+    <p>달러 기호 안에 <code>\ce{...}</code>를 쓰면 화학식이 렌더링됩니다. KaTeX mhchem 확장을 사용합니다.</p>
+    <table>
+      <tr><th>문법</th><th>설명</th><th>예시</th></tr>
+      <tr><td><code>$\ce{H2O}$</code></td><td>물 분자</td><td>$\ce{H2O}$</td></tr>
+      <tr><td><code>$\ce{CO2}$</code></td><td>이산화탄소</td><td>$\ce{CO2}$</td></tr>
+      <tr><td><code>$\ce{Na+ + Cl- -> NaCl}$</code></td><td>반응식 (화살표)</td><td>$\ce{Na+ + Cl- -> NaCl}$</td></tr>
+      <tr><td><code>$\ce{H2SO4}$</code></td><td>황산</td><td>$\ce{H2SO4}$</td></tr>
+      <tr><td><code>$\ce{^{14}_{6}C}$</code></td><td>동위원소 표기</td><td>$\ce{^{14}_{6}C}$</td></tr>
+      <tr><td><code>$$\ce{A + B <=> C + D}$$</code></td><td>가역 반응식 (블록)</td><td></td></tr>
+    </table>
+
+    <div class="example">
+      <div class="example-label">예시</div>
+      <div class="example-body">&lt;5t: 물의 화학식: $\ce{H2O}$&gt;
+&lt;5t: 광합성 반응:&gt;
+$$\ce{6CO2 + 6H2O -> C6H12O6 + 6O2}$$
+&lt;5t: 산화환원 반응: $\ce{Fe^{2+} -> Fe^{3+} + e-}$&gt;</div>
+    </div>
+
+    <!-- ───── 표 ───── -->
+    <h2 id="table">표</h2>
+    <p><code>|</code>로 열을 구분하고, <code>//</code>로 행을 구분합니다. 첫 번째 행이 헤더(굵은 배경)가 됩니다.</p>
+    <table>
+      <tr><th>문법</th><th>설명</th></tr>
+      <tr><td><code>&lt;table: 헤더1|헤더2 // 값1|값2&gt;</code></td><td>기본 표 (첫 행 = 헤더)</td></tr>
+      <tr><td><code>&lt;table: 값1|값2 // 값3|값4 header:no&gt;</code></td><td>헤더 없이 데이터만</td></tr>
+    </table>
+
+    <div class="example">
+      <div class="example-label">예시 — 기본 표</div>
+      <div class="example-body">&lt;table: 원소|기호|원자번호 // 수소|H|1 // 산소|O|8 // 탄소|C|6&gt;</div>
+    </div>
+    <div class="example">
+      <div class="example-label">예시 — 헤더 없는 표</div>
+      <div class="example-body">&lt;table: 이름|홍길동 // 학교|bytenode고 // 학년|2학년 header:no&gt;</div>
+    </div>
+    <div class="note">열 수가 일치하지 않아도 되지만, 가능하면 맞추는 게 깔끔합니다. 셀 안에 <code>|</code>나 <code>//</code>는 사용할 수 없습니다.</div>
+
+    <!-- ───── 수학 그래프 ───── -->
+    <h2 id="graph">수학 그래프</h2>
+    <p>함수식을 입력하면 인터랙티브 그래프로 표시됩니다. 줌/패닝 가능. 인터넷 연결이 필요합니다.</p>
+    <table>
+      <tr><th>명령</th><th>설명</th></tr>
+      <tr><td><code>&lt;graph: y=x^2&gt;</code></td><td>기본 그래프 (범위 자동 -10~10)</td></tr>
+      <tr><td><code>&lt;graph: y=x^2 range:-5,5&gt;</code></td><td>x축 범위 지정</td></tr>
+      <tr><td><code>&lt;graph: y=x^2 | y=2*x+1&gt;</code></td><td><code>|</code>로 구분해 여러 함수 동시 표시</td></tr>
+      <tr><td><code>&lt;graph: y=sin(x) size:small&gt;</code></td><td>크기 지정: <code>small</code> / <code>medium</code>(기본) / <code>large</code></td></tr>
+    </table>
+
+    <div class="note">수식은 JavaScript 수학 표현식으로 씁니다: <code>*</code> 곱셈 필수, <code>^</code> 거듭제곱, <code>sin(x)</code> <code>cos(x)</code> <code>sqrt(x)</code> <code>abs(x)</code> <code>log(x)</code> 사용 가능. <code>y=</code>는 생략 가능.</div>
+
+    <table>
+      <tr><th>수식 예시</th><th>의미</th></tr>
+      <tr><td><code>x^2</code></td><td>$x^2$ (이차함수)</td></tr>
+      <tr><td><code>x^2 + 2*x + 1</code></td><td>$x^2 + 2x + 1$</td></tr>
+      <tr><td><code>sin(x)</code></td><td>$\sin(x)$ (삼각함수)</td></tr>
+      <tr><td><code>sqrt(x)</code></td><td>$\sqrt{x}$ (제곱근)</td></tr>
+      <tr><td><code>1/x</code></td><td>$\frac{1}{x}$ (반비례)</td></tr>
+      <tr><td><code>abs(x)</code></td><td>$|x|$ (절댓값)</td></tr>
+      <tr><td><code>log(x)</code></td><td>$\log(x)$ (로그)</td></tr>
+      <tr><td><code>exp(x)</code></td><td>$e^x$ (지수함수)</td></tr>
+    </table>
+
+    <div class="example">
+      <div class="example-label">예시 — 이차함수</div>
+      <div class="example-body">&lt;graph: y=x^2 range:-5,5&gt;</div>
+    </div>
+    <div class="example">
+      <div class="example-label">예시 — 여러 함수 비교</div>
+      <div class="example-body">&lt;graph: y=x^2 | y=2*x+3 | y=-x+1 range:-6,6 size:large&gt;</div>
+    </div>
+    <div class="example">
+      <div class="example-label">예시 — 삼각함수</div>
+      <div class="example-body">&lt;graph: y=sin(x) | y=cos(x) range:-6.28,6.28 size:medium&gt;</div>
+    </div>
+
+    <!-- ───── 3D 모델 ───── -->
+    <h2 id="model3d">3D 모델</h2>
+    <p>GLB / GLTF 형식의 3D 모델 파일을 글 안에 삽입합니다. 마우스·터치로 회전 및 확대가 가능합니다.</p>
+    <table>
+      <tr><th>명령</th><th>설명</th></tr>
+      <tr><td><code>&lt;model3d: /uploads/파일.glb&gt;</code></td><td>3D 모델 삽입 (기본 크기 medium)</td></tr>
+      <tr><td><code>&lt;model3d: /uploads/파일.glb autorotate&gt;</code></td><td>자동 회전 활성화</td></tr>
+      <tr><td><code>&lt;model3d: /uploads/파일.glb size:large&gt;</code></td><td>크기 지정: <code>small</code> / <code>medium</code>(기본) / <code>large</code></td></tr>
+    </table>
+    <div class="note">
+      지원 형식: <strong>GLB</strong>, <strong>GLTF</strong> — 파일은 미디어 업로드로 먼저 서버에 올린 뒤 경로를 복사해서 사용합니다.<br>
+      최대 파일 크기: 50 MB.<br>
+      <code>autorotate</code>와 <code>size:</code>는 순서 상관없이 함께 사용할 수 있습니다.
+    </div>
+    <div class="example">
+      <div class="example-label">예시 — 기본</div>
+      <div class="example-body">&lt;model3d: /uploads/robot.glb&gt;</div>
+    </div>
+    <div class="example">
+      <div class="example-label">예시 — 자동 회전 + 큰 크기</div>
+      <div class="example-body">&lt;model3d: /uploads/robot.glb autorotate size:large&gt;</div>
+    </div>
+
+    <!-- ───── 간격 ───── -->
+    <h2 id="gap">간격</h2>
+    <table>
+      <tr><th>명령</th><th>설명</th></tr>
+      <tr><td><code>&lt;-&gt;</code></td><td>가로 한 칸 공백</td></tr>
+      <tr><td><code>&lt;5-&gt;</code></td><td>가로 N칸 공백 (숫자 지정)</td></tr>
+      <tr><td>빈 줄</td><td>세로 여백 (많이 넣을수록 넓어짐)</td></tr>
+      <tr><td><code>&lt;spacer: 30Q&gt;</code></td><td>정확한 세로 여백 (숫자 = 픽셀, <code>30Q</code> = 30px)</td></tr>
+    </table>
+
+    <div class="note">빈 줄 여백은 실제 공간이 됩니다. 섹션 사이에는 1줄 정도만 사용하는 것을 권장합니다. 너무 많은 빈 줄은 큰 공백으로 보입니다.</div>
+
+    <div class="example">
+      <div class="example-label">예시</div>
+      <div class="example-body">&lt;5t: 왼쪽&gt; &lt;-&gt; &lt;5t: 중간&gt; &lt;5-&gt; &lt;5t: 오른쪽&gt;
+&lt;spacer: 30Q&gt;</div>
+    </div>
+
+    <!-- ───── 선 ───── -->
+    <h2 id="line">선</h2>
+    <table>
+      <tr><th>명령</th><th>설명</th></tr>
+      <tr><td><code>&lt;grid x&gt;</code></td><td>가로 구분선</td></tr>
+      <tr><td><code>&lt;color:silver_grid x&gt;</code></td><td>색상이 있는 가로선</td></tr>
+      <tr><td><code>&lt;grid y_l=2Q&gt;</code></td><td>세로선 (높이 지정)</td></tr>
+      <tr><td><code>&lt;color:gray_grid y_l=2Q&gt;</code></td><td>색상이 있는 세로선</td></tr>
+    </table>
+
+    <div class="example">
+      <div class="example-label">예시</div>
+      <div class="example-body">&lt;grid x&gt;
+&lt;color:silver_grid x&gt;
+&lt;5t: 왼쪽&gt; &lt;grid y_l=2Q&gt; &lt;5t: 오른쪽&gt;</div>
+    </div>
+
+    <!-- ───── 이미지 ───── -->
+    <h2 id="image">이미지</h2>
+    <table>
+      <tr><th>명령</th><th>설명</th></tr>
+      <tr><td><code>&lt;img: /uploads/photo.jpg&gt;</code></td><td>이미지 삽입</td></tr>
+      <tr><td><code>&lt;img: /uploads/photo.jpg size x:12Q y:6Q middle&gt;</code></td><td>크기와 정렬 지정 (up / middle / down)</td></tr>
+      <tr><td><code>&lt;img: /uploads/photo.jpg link:https://example.com&gt;</code></td><td>클릭 가능한 이미지</td></tr>
+      <tr><td><code>&lt;img: size x:12Q y:6Q&gt;</code></td><td>직전 이미지에 크기 적용</td></tr>
+    </table>
+
+    <div class="note">이미지 크기는 <code>x:12Q y:6Q</code> 또는 <code>x:12 y:6</code> 모두 사용할 수 있습니다. Q 접미사는 무시됩니다.</div>
+
+    <div class="example">
+      <div class="example-label">예시</div>
+      <div class="example-body">&lt;img: /uploads/photo.jpg&gt;
+&lt;img: /uploads/photo.jpg size x:20Q y:12Q middle&gt;
+&lt;img: /uploads/photo.jpg link:https://example.com&gt;</div>
+    </div>
+
+    <!-- ───── 영상 ───── -->
+    <h2 id="video">영상</h2>
+    <table>
+      <tr><th>명령</th><th>설명</th></tr>
+      <tr><td><code>&lt;video: /uploads/clip.mp4&gt;</code></td><td>영상 삽입</td></tr>
+      <tr><td><code>&lt;video: /uploads/clip.mp4 size x:20Q y:10Q&gt;</code></td><td>크기 지정</td></tr>
+    </table>
+
+    <div class="example">
+      <div class="example-label">예시</div>
+      <div class="example-body">&lt;video: /uploads/intro.mp4&gt;
+&lt;video: /uploads/intro.mp4 size x:32Q y:18Q&gt;</div>
+    </div>
+
+    <!-- ───── 갤러리 ───── -->
+    <h2 id="gallery">갤러리</h2>
+    <p>여러 이미지를 갤러리 형식으로 나란히 표시합니다. 경로를 공백으로 구분해서 나열합니다.</p>
+
+    <div class="example">
+      <div class="example-label">예시</div>
+      <div class="example-body">&lt;gallery: /uploads/a.jpg /uploads/b.jpg /uploads/c.jpg&gt;</div>
+    </div>
+
+    <!-- ═══════════════════════════════════
+         bytenode-flashinfo
+    ════════════════════════════════════ -->
+    <h2 id="fi-intro" style="color:#a78bfa;border-bottom:2px solid #7c3aed;padding-bottom:6px">bytenode-flashinfo</h2>
+    <p>인포그래픽 제작에 특화된 확장 모드입니다. 글쓰기 화면 상단의 모드 버튼에서 <strong>bytenode-flashinfo</strong>로 전환하면 해당 AI 프롬프트가 복사되고 비율 설정이 활성화됩니다.</p>
+    <p>기본 bytenode 태그를 모두 사용할 수 있으며, 아래의 인포그래픽 전용 태그가 추가됩니다.</p>
+
+    <h2 id="fi-stat">stat / progress</h2>
+    <table>
+      <tr><th>명령</th><th>설명</th></tr>
+      <tr><td><code>&lt;stat: 값 | 라벨&gt;</code></td><td>큰 숫자 강조 표시</td></tr>
+      <tr><td><code>&lt;stat: 값 | 라벨 | 색&gt;</code></td><td>색상 지정 (이름 또는 #hex)</td></tr>
+      <tr><td><code>&lt;progress: 라벨 | 75%&gt;</code></td><td>가로 진행 막대</td></tr>
+      <tr><td><code>&lt;progress: 라벨 | 75% | #4ade80&gt;</code></td><td>색상 진행 막대</td></tr>
+    </table>
+    <div class="example">
+      <div class="example-label">예시</div>
+      <div class="example-body">&lt;stat: 98% | 고객 만족도 | #4ade80&gt;
+&lt;stat: 1,200만 | 누적 사용자 | #60a5fa&gt;
+&lt;progress: 목표 달성률 | 83% | #facc15&gt;</div>
+    </div>
+
+    <h2 id="fi-charts">차트 태그</h2>
+    <p>항목과 값은 <code>항목:숫자</code> 형식으로 작성하고, <code>|</code>로 구분합니다. 숫자만 입력 가능합니다.</p>
+    <table>
+      <tr><th>명령</th><th>설명</th></tr>
+      <tr><td><code>&lt;piechart: 항목1:값 | 항목2:값&gt;</code></td><td>원형 파이 차트</td></tr>
+      <tr><td><code>&lt;donut: 항목1:값 | 항목2:값&gt;</code></td><td>도넛 차트</td></tr>
+      <tr><td><code>&lt;barchart: 항목1:값 | 항목2:값&gt;</code></td><td>세로 막대 차트</td></tr>
+      <tr><td><code>&lt;hbar: 항목1:값 | 항목2:값&gt;</code></td><td>가로 막대 차트</td></tr>
+      <tr><td><code>&lt;linechart: 항목1:값 | 항목2:값&gt;</code></td><td>꺾은선 차트</td></tr>
+      <tr><td><code>&lt;areachart: 항목1:값 | 항목2:값&gt;</code></td><td>영역(Area) 차트</td></tr>
+      <tr><td><code>&lt;radar: 항목1:값 | 항목2:값&gt;</code></td><td>레이더(방사형) 차트</td></tr>
+    </table>
+    <div class="note">공통 옵션: <code>title:제목</code>, <code>size:small</code> / <code>size:medium</code>(기본) / <code>size:large</code></div>
+    <div class="example">
+      <div class="example-label">예시 — 파이 차트</div>
+      <div class="example-body">&lt;piechart: 서울:35 | 경기:28 | 부산:15 | 기타:22 title:지역별 비율&gt;</div>
+    </div>
+    <div class="example">
+      <div class="example-label">예시 — 막대 차트</div>
+      <div class="example-body">&lt;barchart: 1월:120 | 2월:145 | 3월:98 | 4월:210 title:월별 방문자 size:large&gt;</div>
+    </div>
+    <div class="example">
+      <div class="example-label">예시 — 레이더</div>
+      <div class="example-body">&lt;radar: 디자인:85 | 성능:72 | 가격:60 | 브랜드:90 | AS:78 title:제품 평가&gt;</div>
+    </div>
+
+    <h2 id="fi-ratio">출력 비율</h2>
+    <p>flashinfo 모드에서 글쓰기 폼에 비율 선택 항목이 나타납니다. 설정한 비율은 PDF 다운로드 시 페이지 크기에 반영됩니다.</p>
+    <table>
+      <tr><th>비율</th><th>크기</th><th>용도</th></tr>
+      <tr><td>자유 (기본)</td><td>A4 세로</td><td>일반 글</td></tr>
+      <tr><td>A4 세로</td><td>210×297mm</td><td>보고서, 문서</td></tr>
+      <tr><td>A4 가로</td><td>297×210mm</td><td>가로형 문서</td></tr>
+      <tr><td>16:9</td><td>297×167mm</td><td>프레젠테이션</td></tr>
+      <tr><td>4:3</td><td>267×200mm</td><td>슬라이드</td></tr>
+      <tr><td>정사각형 1:1</td><td>210×210mm</td><td>SNS 카드</td></tr>
+      <tr><td>스토리 9:16</td><td>120×213mm</td><td>인스타 스토리</td></tr>
+    </table>
+
+    <!-- ═══ flashppt ═══ -->
+    <h2 id="ppt-tags" style="color:#f472b6;border-bottom:2px solid #f472b6;padding-bottom:6px">bytenode-flashppt — 슬라이드</h2>
+    <p>16:9 프레젠테이션 형식. <code>&lt;slide:&gt;</code>로 슬라이드를 구분합니다. flashinfo의 모든 차트·레이아웃 태그도 그대로 사용 가능합니다.</p>
+    <table>
+      <tr><th>명령</th><th>설명</th></tr>
+      <tr><td><code>&lt;slidecover: 제목 | 부제목 | 색&gt;</code></td><td>표지 슬라이드 (전체 배경색)</td></tr>
+      <tr><td><code>&lt;slide: 제목&gt;</code></td><td>새 슬라이드 (자동 번호)</td></tr>
+      <tr><td><code>&lt;slide: 제목 | 부제목&gt;</code></td><td>부제목 포함 슬라이드</td></tr>
+      <tr><td><code>&lt;slidenote: 메모&gt;</code></td><td>발표자 노트 (작은 글씨)</td></tr>
+    </table>
+    <div class="example">
+      <div class="example-label">예시</div>
+      <div class="example-body">&lt;slidecover: AI가 바꾸는 미래 | 2025 기술 트렌드 | #1e3a5f&gt;
+&lt;slide: 핵심 수치&gt;
+&lt;stat: 4,200만 | AI 서비스 사용자 | #60a5fa&gt;
+&lt;slide: 시장 점유율 | 2024년 기준&gt;
+&lt;piechart: ChatGPT:42 | Gemini:28 | Claude:18 | 기타:12 title:AI 점유율&gt;
+&lt;slidenote: 출처: 글로벌 AI 리포트 2024&gt;</div>
+    </div>
+
+    <!-- ═══ flashreport ═══ -->
+    <h2 id="report-tags" style="color:#34d399;border-bottom:2px solid #34d399;padding-bottom:6px">bytenode-flashreport — 보고서</h2>
+    <p>A4 세로 학술/업무 보고서 형식. 목차 번호가 자동 생성됩니다.</p>
+    <table>
+      <tr><th>명령</th><th>설명</th></tr>
+      <tr><td><code>&lt;reportcover: 제목 | 부제목 | 작성자 | 날짜&gt;</code></td><td>보고서 표지</td></tr>
+      <tr><td><code>&lt;abstract: 내용&gt;</code></td><td>요약(Abstract) 박스</td></tr>
+      <tr><td><code>&lt;rh1: 제목&gt;</code></td><td>대제목 (1. 자동 번호)</td></tr>
+      <tr><td><code>&lt;rh2: 제목&gt;</code></td><td>중제목 (1.1. 자동 번호)</td></tr>
+      <tr><td><code>&lt;rh3: 제목&gt;</code></td><td>소제목 (1.1.1. 자동 번호)</td></tr>
+      <tr><td><code>&lt;footnote: 내용&gt;</code></td><td>각주</td></tr>
+      <tr><td><code>&lt;caption: 내용&gt;</code></td><td>그림/표 캡션</td></tr>
+    </table>
+
+    <!-- ═══ flashresume ═══ -->
+    <h2 id="resume-tags" style="color:#facc15;border-bottom:2px solid #facc15;padding-bottom:6px">bytenode-flashresume — 이력서</h2>
+    <p>A4 세로 전문 이력서/포트폴리오 형식.</p>
+    <table>
+      <tr><th>명령</th><th>설명</th></tr>
+      <tr><td><code>&lt;resumeheader: 이름 | 직책 | 이메일 | 전화 | 링크&gt;</code></td><td>이력서 상단 헤더</td></tr>
+      <tr><td><code>&lt;resumesection: 섹션명&gt;</code></td><td>섹션 구분 헤더 (경력, 스킬 등)</td></tr>
+      <tr><td><code>&lt;experience: 회사 | 직책 | 기간 | 업무내용&gt;</code></td><td>경력 항목</td></tr>
+      <tr><td><code>&lt;education: 학교 | 전공 | 기간 | 학위&gt;</code></td><td>학력 항목</td></tr>
+      <tr><td><code>&lt;project: 제목 | 기간 | 설명 | 태그1,태그2&gt;</code></td><td>프로젝트 항목</td></tr>
+      <tr><td><code>&lt;skillbar: 스킬 | 레벨% | 색&gt;</code></td><td>스킬 진행 막대</td></tr>
+      <tr><td><code>&lt;award: 수상명 | 기관 | 날짜&gt;</code></td><td>수상/자격 항목</td></tr>
+    </table>
+
+    <!-- ═══ flashnewsletter ═══ -->
+    <h2 id="nl-tags" style="color:#fb923c;border-bottom:2px solid #fb923c;padding-bottom:6px">bytenode-flashnewsletter — 뉴스레터</h2>
+    <p>이메일 뉴스레터/매거진 형식. A4 기준.</p>
+    <table>
+      <tr><th>명령</th><th>설명</th></tr>
+      <tr><td><code>&lt;nlheader: 뉴스레터명 | 날짜 | 색&gt;</code></td><td>뉴스레터 상단 배너</td></tr>
+      <tr><td><code>&lt;featured: 제목 | 내용 | 색&gt;</code></td><td>메인 특집 기사 박스</td></tr>
+      <tr><td><code>&lt;newscard: 제목 | 내용&gt;</code></td><td>일반 뉴스 카드</td></tr>
+      <tr><td><code>&lt;nlsection: 섹션명 | 색&gt;</code></td><td>섹션 구분 헤더</td></tr>
+      <tr><td><code>&lt;subscribe: 문구 | 버튼텍스트&gt;</code></td><td>구독 유도 박스</td></tr>
+      <tr><td><code>&lt;nlfooter: 발행처 | 수신거부문구&gt;</code></td><td>하단 푸터</td></tr>
+    </table>
+
+    <!-- ═══ flashstory ═══ -->
+    <h2 id="story-tags" style="color:#e879f9;border-bottom:2px solid #e879f9;padding-bottom:6px">bytenode-flashstory — SNS 스토리</h2>
+    <p>9:16 세로 스토리 카드 형식. 인스타그램/틱톡 스토리 최적화.</p>
+    <table>
+      <tr><th>명령</th><th>설명</th></tr>
+      <tr><td><code>&lt;storyslide: 색&gt;</code></td><td>새 스토리 카드 (단색 배경)</td></tr>
+      <tr><td><code>&lt;storyslide: 색1 | 색2&gt;</code></td><td>그라데이션 배경 스토리</td></tr>
+      <tr><td><code>&lt;bigtext: 텍스트&gt;</code></td><td>크고 강렬한 중앙 텍스트</td></tr>
+      <tr><td><code>&lt;storyemoji: 이모지&gt;</code></td><td>크게 표시되는 이모지</td></tr>
+      <tr><td><code>&lt;storycaption: 텍스트&gt;</code></td><td>하단 설명 텍스트</td></tr>
+      <tr><td><code>&lt;storytag: 태그1 | 태그2&gt;</code></td><td>해시태그 행</td></tr>
+    </table>
+    <div class="example">
+      <div class="example-label">예시</div>
+      <div class="example-body">&lt;storyslide: #7c3aed | #1e3a5f&gt;
+&lt;storyemoji: 🚀&gt;
+&lt;bigtext: AI가 바꾸는 세상&gt;
+&lt;storycaption: 2025년 주목해야 할 기술 트렌드&gt;
+&lt;storytag: AI트렌드 | 테크뉴스 | 2025&gt;</div>
+    </div>
+
+    <!-- ═══════════════════════════════════
+         인터랙티브 모드
+    ════════════════════════════════════ -->
+
+    <!-- ═══ byteflash ═══ -->
+    <h2 id="byteflash" style="color:#818cf8;border-bottom:2px solid #818cf8;padding-bottom:6px">byteflash — 플래시카드</h2>
+    <p>앞면/뒷면이 있는 학습용 플래시카드 세트를 만듭니다. 카드를 클릭하면 3D로 뒤집히며, 이전/다음 버튼으로 탐색합니다.</p>
+    <table>
+      <tr><th>명령</th><th>설명</th></tr>
+      <tr><td><code>&lt;card-front: 내용&gt;</code></td><td>카드 앞면 (질문 / 개념)</td></tr>
+      <tr><td><code>&lt;card-back: 내용&gt;</code></td><td>카드 뒷면 (정답 / 설명)</td></tr>
+    </table>
+    <div class="note"><code>card-front</code>와 <code>card-back</code>은 반드시 쌍으로, 앞-뒤 순서로 연속해서 작성해야 합니다. 연속된 쌍들이 하나의 카드덱으로 묶입니다.</div>
+    <div class="example">
+      <div class="example-label">예시</div>
+      <div class="example-body">&lt;card-front: 광합성의 최종 산물은?&gt;
+&lt;card-back: 포도당(C6H12O6)과 산소(O2)&gt;
+&lt;card-front: 세포 호흡이 일어나는 장소는?&gt;
+&lt;card-back: 미토콘드리아&gt;
+&lt;card-front: DNA 이중나선 구조를 발견한 사람은?&gt;
+&lt;card-back: 왓슨과 크릭 (1953년)&gt;</div>
+    </div>
+
+    <!-- ═══ bytestep ═══ -->
+    <h2 id="bytestep" style="color:#818cf8;border-bottom:2px solid #818cf8;padding-bottom:6px">bytestep — 단계별 가이드</h2>
+    <p>번호가 있는 단계별 가이드를 인터랙티브하게 표시합니다. 이전/다음 버튼으로 현재 단계를 강조합니다.</p>
+    <table>
+      <tr><th>명령</th><th>설명</th></tr>
+      <tr><td><code>&lt;step: 번호, title: 제목, content: 내용&gt;</code></td><td>하나의 단계</td></tr>
+    </table>
+    <div class="note">연속된 <code>step</code> 태그들이 하나의 스텝 그룹으로 묶입니다.</div>
+    <div class="example">
+      <div class="example-label">예시</div>
+      <div class="example-body">&lt;step: 1, title: 환경 설정, content: Node.js를 설치하고 프로젝트 폴더를 만듭니다.&gt;
+&lt;step: 2, title: 패키지 설치, content: npm install 명령어로 필요한 패키지를 설치합니다.&gt;
+&lt;step: 3, title: 서버 실행, content: node server.js로 서버를 시작합니다. 포트 4000에서 접속 가능합니다.&gt;</div>
+    </div>
+
+    <!-- ═══ byteflow ═══ -->
+    <h2 id="byteflow" style="color:#818cf8;border-bottom:2px solid #818cf8;padding-bottom:6px">byteflow — 흐름도</h2>
+    <p>노드와 연결선으로 관계도 및 흐름도를 만듭니다. SVG 화살표로 노드 간 방향이 표시됩니다.</p>
+    <table>
+      <tr><th>명령</th><th>설명</th></tr>
+      <tr><td><code>&lt;node: ID, label: 표시텍스트&gt;</code></td><td>노드 정의 (ID는 영문 소문자 권장)</td></tr>
+      <tr><td><code>&lt;edge: 출발ID -&gt; 도착ID, desc: 설명&gt;</code></td><td>노드 간 연결 화살표 (<code>desc:</code>는 선택)</td></tr>
+    </table>
+    <div class="note">노드를 모두 정의한 다음 연결(edge)을 작성하세요. 연속된 <code>node</code>/<code>edge</code> 태그들이 하나의 흐름도로 묶입니다.</div>
+    <div class="example">
+      <div class="example-label">예시</div>
+      <div class="example-body">&lt;node: a, label: 사용자&gt;
+&lt;node: b, label: 로그인&gt;
+&lt;node: c, label: 대시보드&gt;
+&lt;node: d, label: 오류 페이지&gt;
+&lt;edge: a -> b, desc: 접속&gt;
+&lt;edge: b -> c, desc: 성공&gt;
+&lt;edge: b -> d, desc: 실패&gt;</div>
+    </div>
+
+    <!-- ═══ byteroadmap ═══ -->
+    <h2 id="byteroadmap" style="color:#818cf8;border-bottom:2px solid #818cf8;padding-bottom:6px">byteroadmap — 타임라인 / 로드맵</h2>
+    <p>시간 순서에 따른 계획, 역사, 로드맵을 세로 타임라인으로 표시합니다. 각 항목에 뱃지 색상을 지정할 수 있습니다.</p>
+    <table>
+      <tr><th>명령</th><th>설명</th></tr>
+      <tr><td><code>&lt;milestone: 기간, title: 제목, badge: 색상, content: 내용&gt;</code></td><td>타임라인 항목 (<code>badge:</code>와 <code>content:</code>는 선택)</td></tr>
+    </table>
+    <div class="note">연속된 <code>milestone</code> 태그들이 하나의 타임라인으로 묶입니다.</div>
+    <table>
+      <tr><th>badge 값</th><th>색상</th><th>권장 용도</th></tr>
+      <tr><td><code>green</code></td><td style="color:#34d399">녹색</td><td>완료</td></tr>
+      <tr><td><code>blue</code></td><td style="color:#60a5fa">파란색</td><td>진행중</td></tr>
+      <tr><td><code>yellow</code></td><td style="color:#fbbf24">노란색</td><td>계획</td></tr>
+      <tr><td><code>red</code></td><td style="color:#f87171">빨간색</td><td>중요</td></tr>
+      <tr><td><code>purple</code></td><td style="color:#a78bfa">보라색</td><td>특별</td></tr>
+      <tr><td><code>gray</code></td><td style="color:#94a3b8">회색</td><td>기타</td></tr>
+    </table>
+    <div class="example">
+      <div class="example-label">예시</div>
+      <div class="example-body">&lt;milestone: 2023년 1분기, title: 프로젝트 시작, badge: green, content: 팀 구성 및 기획 완료.&gt;
+&lt;milestone: 2023년 2분기, title: MVP 개발, badge: blue, content: 핵심 기능 개발 및 베타 출시.&gt;
+&lt;milestone: 2023년 3분기, title: 정식 출시, badge: purple, content: 전체 서비스 공개 및 마케팅 시작.&gt;
+&lt;milestone: 2024년 1분기, title: 기능 확장, badge: yellow, content: 모바일 앱 및 API 제공 예정.&gt;</div>
+    </div>
+
+    <!-- ───── 링크 ───── -->
+    <h2 id="link">링크</h2>
+    <p>텍스트 태그 안에서 <code>{URL} 링크문구</code> 형식으로 링크를 만듭니다. Markdown <code>[텍스트](URL)</code> 문법은 지원하지 않습니다.</p>
+
+    <table>
+      <tr><th>구분</th><th>코드</th></tr>
+      <tr><td style="color:#f87171">잘못된 예</td><td><code>&lt;color:blue_5t:{[https://example.com](https://example.com)} 바로가기&gt;</code></td></tr>
+      <tr><td style="color:#86efac">올바른 예</td><td><code>&lt;color:blue_5t:{https://example.com} 바로가기&gt;</code></td></tr>
+    </table>
+
+    <div class="example">
+      <div class="example-label">예시</div>
+      <div class="example-body">&lt;5t: 더 알아보기: {https://example.com} 예시 사이트&gt;
+&lt;color:blue_5t: {https://example.com} 파란 링크&gt;</div>
+    </div>
+
+    <!-- ───── 배지 ───── -->
+    <h2 id="badge">배지</h2>
+    <p>작은 태그 레이블을 표시합니다.</p>
+
+    <div class="example">
+      <div class="example-label">예시</div>
+      <div class="example-body">&lt;badge: 추천&gt; &lt;badge: NEW&gt; &lt;badge: 주의&gt;</div>
+    </div>
+    <div class="example-result" style="padding:10px 18px">
+      <span class="demo-badge">추천</span>
+      <span class="demo-badge">NEW</span>
+      <span class="demo-badge">주의</span>
+    </div>
+
+    <!-- ───── 색상 목록 ───── -->
+    <h2 id="colors-ref">색상 목록</h2>
+    <p>CSS 색상 이름을 그대로 사용할 수 있습니다. 자주 쓰는 색상 예시입니다.</p>
+    <div class="chip-row">
+      <span class="chip"><span class="chip-dot" style="background:red"></span>red</span>
+      <span class="chip"><span class="chip-dot" style="background:orange"></span>orange</span>
+      <span class="chip"><span class="chip-dot" style="background:gold"></span>gold</span>
+      <span class="chip"><span class="chip-dot" style="background:green"></span>green</span>
+      <span class="chip"><span class="chip-dot" style="background:blue"></span>blue</span>
+      <span class="chip"><span class="chip-dot" style="background:purple"></span>purple</span>
+      <span class="chip"><span class="chip-dot" style="background:pink"></span>pink</span>
+      <span class="chip"><span class="chip-dot" style="background:gray"></span>gray</span>
+      <span class="chip"><span class="chip-dot" style="background:silver"></span>silver</span>
+      <span class="chip"><span class="chip-dot" style="background:white;border:1px solid #666"></span>white</span>
+      <span class="chip"><span class="chip-dot" style="background:#f59e0b"></span>#f59e0b</span>
+      <span class="chip"><span class="chip-dot" style="background:#10b981"></span>#10b981</span>
+      <span class="chip"><span class="chip-dot" style="background:#3b82f6"></span>#3b82f6</span>
+      <span class="chip"><span class="chip-dot" style="background:#ef4444"></span>#ef4444</span>
+    </div>
+
+    <!-- ───── 전체 예시 ───── -->
+    <h2 id="example">전체 예시</h2>
+    <p>다양한 태그를 조합한 실제 글 예시입니다.</p>
+    <div class="example">
+      <div class="example-label">전체 예시 코드</div>
+      <div class="example-body">&lt;xt: 나의 첫 번째 포스트&gt;
+&lt;color:gray_5t: 2026년 5월 4일&gt;
+&lt;grid x&gt;
+
+&lt;5t: 안녕하세요! 오늘은 bytenode 작성법을 소개합니다.&gt;
+&lt;spacer: 12Q&gt;
+
+&lt;7t: 주요 기능&gt;
+&lt;bt: 굵은 텍스트&gt;와 &lt;it: 기울인 텍스트&gt;를 사용할 수 있습니다.
+&lt;mark: 형광 강조&gt;도 됩니다.
+
+&lt;callout: 이 부분은 반드시 읽어주세요!&gt;
+&lt;quote: 좋은 코드는 스스로를 설명한다.&gt;
+
+&lt;img: /uploads/sample.jpg size x:24Q y:14Q middle&gt;
+&lt;gallery: /uploads/a.jpg /uploads/b.jpg /uploads/c.jpg&gt;
+
+&lt;5t: 더 알아보기: {https://example.com} 바로가기&gt;
+&lt;badge: 추천&gt; &lt;badge: NEW&gt;
+
+&lt;grid x&gt;
+&lt;color:gray_4t: © 2026 bytenode&gt;</div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ── AI 프롬프트 ──
+const AI_PROMPT = `너는 bytenode 블로그의 글 작성자야. 아래의 태그 문법만 사용해서 글을 써줘.
+
+【필수 규칙】
+1. 모든 태그는 <명령: 내용> 형식이야. 태그 안에 절대 > 문자를 쓰지 마.
+2. 태그 안에 태그를 절대 중첩하지 마. <indent: <mark: 내용>> 이런 형식은 완전히 금지.
+3. 링크는 {https://url} 링크문구 형식으로만 써. Markdown [텍스트](URL) 절대 금지.
+4. 빈 줄은 실제 세로 공백이 돼. 섹션 사이엔 1줄만 써.
+5. 없는 이미지 경로는 절대 쓰지 마.
+6. 수식 안에 > 는 \\gt, < 는 \\lt 로 대체해. 절대 그냥 쓰지 마.
+
+【텍스트 태그】
+<xt: 제목>            → 큰 제목
+<1t: 내용> ~ <9t: 내용> → 크기별 텍스트 (1이 가장 작고 9가 가장 큼, 5가 기본)
+<bt: 내용>            → 굵게
+<it: 내용>            → 기울임
+<mark: 내용>          → 형광펜 강조
+<code: 코드>          → 인라인 코드
+<badge: 텍스트>       → 작은 배지 (태그 레이블)
+<color:색이름_5t: 내용> → 색상 텍스트. 색 이름(red, blue 등) 또는 #hex 사용 가능
+
+【정렬 · 블록 (태그 중첩 절대 금지, 일반 텍스트만 내용으로 넣을 것)】
+<center: 내용>   → 가운데 정렬
+<right: 내용>    → 오른쪽 정렬
+<indent: 내용>   → 들여쓰기
+<quote: 내용>    → 인용문
+<box: 내용>      → 테두리 박스
+<callout: 내용>  → 강조 박스
+
+【간격 · 선】
+<->              → 가로 한 칸 공백 (인라인)
+<N->             → 가로 N칸 공백 (예: <5->)
+<spacer: 20Q>    → 세로 여백. Q = 픽셀. 20Q = 20px. 너무 크게 쓰지 마.
+<grid x>                   → 가로 구분선
+<color:색_grid x>          → 색상 가로선 (예: <color:silver_grid x>)
+<grid y_l=2Q>              → 세로선 (높이 지정)
+<color:색_grid y_l=2Q>     → 색상 세로선
+
+【이미지 · 영상 · 갤러리】
+<img: /uploads/파일명>                           → 이미지 (실제 업로드된 파일만)
+<img: /uploads/파일명 size x:20Q y:12Q middle>   → 크기+정렬 (up/middle/down)
+<img: /uploads/파일명 link:https://url>           → 클릭 이미지
+<video: /uploads/파일명>                          → 영상
+<video: /uploads/파일명 size x:30Q y:17Q>        → 크기 지정 영상
+<gallery: /uploads/a.jpg /uploads/b.jpg>          → 이미지 갤러리
+
+【링크】
+태그 내부에서 {https://url} 링크문구 형식으로 사용.
+올바른 예: <5t: 자세히 보기 {https://example.com} 바로가기>
+잘못된 예: <5t: [바로가기](https://example.com)>  ← 절대 금지
+
+【수학 기호 (LaTeX)】
+$수식$    → 인라인 수식. 예: $x^2 + 1$
+$$수식$$  → 블록 수식 (별도 줄에 크게 표시). 예: $$x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$$
+주의: 수식 안에 > 는 반드시 \\gt, < 는 \\lt 로 쓸 것. 그냥 쓰면 파서가 깨짐.
+
+【화학식 (KaTeX mhchem)】
+$\\ce{화학식}$   → 인라인 화학식
+$$\\ce{화학식}$$ → 블록 화학식
+
+화학식 예시:
+$\\ce{H2O}$  $\\ce{CO2}$  $\\ce{H2SO4}$
+$\\ce{Na+ + Cl- -> NaCl}$
+$$\\ce{6CO2 + 6H2O -> C6H12O6 + 6O2}$$
+주의: \\ce{} 안의 화살표(->)는 그대로 써도 됨. 단, 태그 밖 > < 는 \\gt \\lt 사용.
+
+【표】
+<table: 헤더1|헤더2|헤더3 // 값1|값2|값3 // 값4|값5|값6>   → 기본 표 (첫 행 헤더)
+<table: 값1|값2 // 값3|값4 header:no>                       → 헤더 없는 표
+
+표 규칙:
+- | 로 열 구분, // 로 행 구분
+- 첫 행이 자동으로 헤더(굵은 배경)
+- 헤더 없애려면 끝에 header:no 추가
+- 셀 안에 | 나 // 는 사용 불가
+
+【수학 그래프】
+<graph: y=수식>                          → 기본 그래프 (x범위 -10~10, 크기 medium)
+<graph: y=수식 range:-5,5>              → x축 범위 직접 지정
+<graph: y=수식1 | y=수식2 range:-5,5>  → 여러 함수 동시 표시 (|로 구분)
+<graph: y=수식 size:large>             → 크기 지정: small / medium / large
+
+수식 규칙:
+- 곱셈은 반드시 * 사용 (2x → 2*x, ax^2 → a*x^2)
+- 거듭제곱: x^2, x^3
+- 내장 함수: sin(x), cos(x), tan(x), sqrt(x), abs(x), log(x), exp(x)
+- y= 는 생략 가능
+- 수식 안에 > < 절대 쓰지 말 것 (\\gt \\lt 사용)
+
+그래프 예시:
+<graph: y=x^2 range:-5,5>
+<graph: y=x^2 - 2*x - 3 | y=x^2 - 2*x + 1 | y=x^2 - 2*x + 3 range:-2,5 size:large>
+<graph: y=sin(x) | y=cos(x) range:-6.28,6.28 size:medium>
+
+【3D 모델】
+<model3d: /uploads/파일.glb>               → GLB 3D 모델 삽입
+<model3d: /uploads/파일.glb autorotate>    → 자동 회전
+<model3d: /uploads/파일.glb autorotate size:large>  → 크기 지정 (small|medium|large)
+- 지원 형식: GLB, GLTF
+- camera-controls 기본 제공 (마우스/터치로 회전·확대 가능)
+- autorotate 키워드 추가 시 자동 회전
+
+이제 위 문법으로 글을 작성해줘.`;
+
+function copyAIPrompt() {
+  navigator.clipboard.writeText(AI_PROMPT).then(() => {
+    const btn = document.getElementById('copyPromptBtn');
+    const orig = btn.textContent;
+    btn.textContent = '복사됨!';
+    btn.style.background = '#14532d';
+    btn.style.color = '#86efac';
+    setTimeout(() => {
+      btn.textContent = orig;
+      btn.style.background = '';
+      btn.style.color = '';
+    }, 2000);
+  }).catch(() => alert('복사 실패. 브라우저가 클립보드 접근을 허용하지 않습니다.'));
+}
+
+// 다크/라이트 전환
+function toggleMode() {
+  const isDark = document.body.classList.contains('dark');
+  document.body.classList.toggle('dark', !isDark);
+  document.body.classList.toggle('light', isDark);
+  document.getElementById('modeBtn').textContent = isDark ? '☀ 라이트 모드' : '🌙 다크 모드';
+  localStorage.setItem('helpMode', isDark ? 'dark' : 'light');
+}
+
+// 항상 다크로 시작
+document.body.className = 'dark';
+document.getElementById('modeBtn').textContent = '☀ 라이트 모드';
+
+// 사이드바 활성 항목 자동 표시
+const sections = document.querySelectorAll('h2[id]');
+const links = document.querySelectorAll('.sidebar a');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const active = document.querySelector(`.sidebar a[href="#${e.target.id}"]`);
+      if (active) active.classList.add('active');
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
