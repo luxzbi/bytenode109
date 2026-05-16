@@ -2014,6 +2014,9 @@ function makePromptRow(idx, codeName, note, dateStr, content, isNew) {
       </div>
       <button onclick="copyBe1sPrompt()" style="background:rgba(108,99,255,.25);border:1px solid rgba(108,99,255,.4);color:#a78bfa;border-radius:6px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer" id="be1s-copyBtn">📋 생성 + 복사</button>
       <span id="be1s-status" style="font-size:11px;color:#a78bfa;margin-left:10px;display:none">✅ 복사됨!</span>
+      <div style="margin-top:9px;background:rgba(108,99,255,.1);border:1px solid rgba(108,99,255,.25);border-radius:7px;padding:7px 10px;font-size:11px;color:#c4b5fd;line-height:1.6">
+        💡 붙여넣기 전, AI의 <strong>사고 모드(잘 생각하기)</strong> 또는 <strong>Pro 모드</strong>로 전환하는 것을 권장합니다.
+      </div>
     </div>` : '';
   return `<div style="margin-bottom:4px">
     <div class="prompt-row" onclick="togglePromptDetail('${pid}')">
