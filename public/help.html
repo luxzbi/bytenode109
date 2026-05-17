@@ -149,19 +149,10 @@ body.dark .demo-badge{background:#2a2d5e;color:#a5b4fc}
       <li><a href="#ppt-canvas" style="color:#f472b6">자유 배치</a></li>
       <li><a href="#ppt-table" style="color:#f472b6">고급 표 (xtable)</a></li>
       <li><a href="#ppt-effects" style="color:#f472b6">고급 시각 효과</a></li>
-      <li class="section-title" style="color:#34d399">bytenode-flashreport</li>
-      <li><a href="#report-tags" style="color:#34d399">보고서 태그</a></li>
-      <li class="section-title" style="color:#facc15">bytenode-flashresume</li>
-      <li><a href="#resume-tags" style="color:#facc15">이력서 태그</a></li>
-      <li class="section-title" style="color:#fb923c">bytenode-flashnewsletter</li>
-      <li><a href="#nl-tags" style="color:#fb923c">뉴스레터 태그</a></li>
-      <li class="section-title" style="color:#e879f9">bytenode-flashstory</li>
-      <li><a href="#story-tags" style="color:#e879f9">스토리 태그</a></li>
       <li class="section-title" style="color:#818cf8">인터랙티브</li>
       <li><a href="#byteflash" style="color:#818cf8">byteflash (플래시카드)</a></li>
       <li><a href="#bytestep" style="color:#818cf8">bytestep (단계별)</a></li>
       <li><a href="#byteflow" style="color:#818cf8">byteflow (흐름도)</a></li>
-      <li><a href="#byteroadmap" style="color:#818cf8">byteroadmap (로드맵)</a></li>
       <li class="section-title">기타</li>
       <li><a href="#link">링크</a></li>
       <li><a href="#badge">배지</a></li>
@@ -664,68 +655,6 @@ $$\ce{6CO2 + 6H2O -> C6H12O6 + 6O2}$$
 &lt;mockup: mobile | /uploads/app.png | 앱 화면&gt;</div>
     </div>
 
-    <!-- ═══ flashreport ═══ -->
-    <h2 id="report-tags" style="color:#34d399;border-bottom:2px solid #34d399;padding-bottom:6px">bytenode-flashreport — 보고서</h2>
-    <p>A4 세로 학술/업무 보고서 형식. 목차 번호가 자동 생성됩니다.</p>
-    <table>
-      <tr><th>명령</th><th>설명</th></tr>
-      <tr><td><code>&lt;reportcover: 제목 | 부제목 | 작성자 | 날짜&gt;</code></td><td>보고서 표지</td></tr>
-      <tr><td><code>&lt;abstract: 내용&gt;</code></td><td>요약(Abstract) 박스</td></tr>
-      <tr><td><code>&lt;rh1: 제목&gt;</code></td><td>대제목 (1. 자동 번호)</td></tr>
-      <tr><td><code>&lt;rh2: 제목&gt;</code></td><td>중제목 (1.1. 자동 번호)</td></tr>
-      <tr><td><code>&lt;rh3: 제목&gt;</code></td><td>소제목 (1.1.1. 자동 번호)</td></tr>
-      <tr><td><code>&lt;footnote: 내용&gt;</code></td><td>각주</td></tr>
-      <tr><td><code>&lt;caption: 내용&gt;</code></td><td>그림/표 캡션</td></tr>
-    </table>
-
-    <!-- ═══ flashresume ═══ -->
-    <h2 id="resume-tags" style="color:#facc15;border-bottom:2px solid #facc15;padding-bottom:6px">bytenode-flashresume — 이력서</h2>
-    <p>A4 세로 전문 이력서/포트폴리오 형식.</p>
-    <table>
-      <tr><th>명령</th><th>설명</th></tr>
-      <tr><td><code>&lt;resumeheader: 이름 | 직책 | 이메일 | 전화 | 링크&gt;</code></td><td>이력서 상단 헤더</td></tr>
-      <tr><td><code>&lt;resumesection: 섹션명&gt;</code></td><td>섹션 구분 헤더 (경력, 스킬 등)</td></tr>
-      <tr><td><code>&lt;experience: 회사 | 직책 | 기간 | 업무내용&gt;</code></td><td>경력 항목</td></tr>
-      <tr><td><code>&lt;education: 학교 | 전공 | 기간 | 학위&gt;</code></td><td>학력 항목</td></tr>
-      <tr><td><code>&lt;project: 제목 | 기간 | 설명 | 태그1,태그2&gt;</code></td><td>프로젝트 항목</td></tr>
-      <tr><td><code>&lt;skillbar: 스킬 | 레벨% | 색&gt;</code></td><td>스킬 진행 막대</td></tr>
-      <tr><td><code>&lt;award: 수상명 | 기관 | 날짜&gt;</code></td><td>수상/자격 항목</td></tr>
-    </table>
-
-    <!-- ═══ flashnewsletter ═══ -->
-    <h2 id="nl-tags" style="color:#fb923c;border-bottom:2px solid #fb923c;padding-bottom:6px">bytenode-flashnewsletter — 뉴스레터</h2>
-    <p>이메일 뉴스레터/매거진 형식. A4 기준.</p>
-    <table>
-      <tr><th>명령</th><th>설명</th></tr>
-      <tr><td><code>&lt;nlheader: 뉴스레터명 | 날짜 | 색&gt;</code></td><td>뉴스레터 상단 배너</td></tr>
-      <tr><td><code>&lt;featured: 제목 | 내용 | 색&gt;</code></td><td>메인 특집 기사 박스</td></tr>
-      <tr><td><code>&lt;newscard: 제목 | 내용&gt;</code></td><td>일반 뉴스 카드</td></tr>
-      <tr><td><code>&lt;nlsection: 섹션명 | 색&gt;</code></td><td>섹션 구분 헤더</td></tr>
-      <tr><td><code>&lt;subscribe: 문구 | 버튼텍스트&gt;</code></td><td>구독 유도 박스</td></tr>
-      <tr><td><code>&lt;nlfooter: 발행처 | 수신거부문구&gt;</code></td><td>하단 푸터</td></tr>
-    </table>
-
-    <!-- ═══ flashstory ═══ -->
-    <h2 id="story-tags" style="color:#e879f9;border-bottom:2px solid #e879f9;padding-bottom:6px">bytenode-flashstory — SNS 스토리</h2>
-    <p>9:16 세로 스토리 카드 형식. 인스타그램/틱톡 스토리 최적화.</p>
-    <table>
-      <tr><th>명령</th><th>설명</th></tr>
-      <tr><td><code>&lt;storyslide: 색&gt;</code></td><td>새 스토리 카드 (단색 배경)</td></tr>
-      <tr><td><code>&lt;storyslide: 색1 | 색2&gt;</code></td><td>그라데이션 배경 스토리</td></tr>
-      <tr><td><code>&lt;bigtext: 텍스트&gt;</code></td><td>크고 강렬한 중앙 텍스트</td></tr>
-      <tr><td><code>&lt;storyemoji: 이모지&gt;</code></td><td>크게 표시되는 이모지</td></tr>
-      <tr><td><code>&lt;storycaption: 텍스트&gt;</code></td><td>하단 설명 텍스트</td></tr>
-      <tr><td><code>&lt;storytag: 태그1 | 태그2&gt;</code></td><td>해시태그 행</td></tr>
-    </table>
-    <div class="example">
-      <div class="example-label">예시</div>
-      <div class="example-body">&lt;storyslide: #7c3aed | #1e3a5f&gt;
-&lt;storyemoji: 🚀&gt;
-&lt;bigtext: AI가 바꾸는 세상&gt;
-&lt;storycaption: 2025년 주목해야 할 기술 트렌드&gt;
-&lt;storytag: AI트렌드 | 테크뉴스 | 2025&gt;</div>
-    </div>
-
     <!-- ═══════════════════════════════════
          인터랙티브 모드
     ════════════════════════════════════ -->
@@ -782,31 +711,6 @@ $$\ce{6CO2 + 6H2O -> C6H12O6 + 6O2}$$
 &lt;edge: a -> b, desc: 접속&gt;
 &lt;edge: b -> c, desc: 성공&gt;
 &lt;edge: b -> d, desc: 실패&gt;</div>
-    </div>
-
-    <!-- ═══ byteroadmap ═══ -->
-    <h2 id="byteroadmap" style="color:#818cf8;border-bottom:2px solid #818cf8;padding-bottom:6px">byteroadmap — 타임라인 / 로드맵</h2>
-    <p>시간 순서에 따른 계획, 역사, 로드맵을 세로 타임라인으로 표시합니다. 각 항목에 뱃지 색상을 지정할 수 있습니다.</p>
-    <table>
-      <tr><th>명령</th><th>설명</th></tr>
-      <tr><td><code>&lt;milestone: 기간, title: 제목, badge: 색상, content: 내용&gt;</code></td><td>타임라인 항목 (<code>badge:</code>와 <code>content:</code>는 선택)</td></tr>
-    </table>
-    <div class="note">연속된 <code>milestone</code> 태그들이 하나의 타임라인으로 묶입니다.</div>
-    <table>
-      <tr><th>badge 값</th><th>색상</th><th>권장 용도</th></tr>
-      <tr><td><code>green</code></td><td style="color:#34d399">녹색</td><td>완료</td></tr>
-      <tr><td><code>blue</code></td><td style="color:#60a5fa">파란색</td><td>진행중</td></tr>
-      <tr><td><code>yellow</code></td><td style="color:#fbbf24">노란색</td><td>계획</td></tr>
-      <tr><td><code>red</code></td><td style="color:#f87171">빨간색</td><td>중요</td></tr>
-      <tr><td><code>purple</code></td><td style="color:#a78bfa">보라색</td><td>특별</td></tr>
-      <tr><td><code>gray</code></td><td style="color:#94a3b8">회색</td><td>기타</td></tr>
-    </table>
-    <div class="example">
-      <div class="example-label">예시</div>
-      <div class="example-body">&lt;milestone: 2023년 1분기, title: 프로젝트 시작, badge: green, content: 팀 구성 및 기획 완료.&gt;
-&lt;milestone: 2023년 2분기, title: MVP 개발, badge: blue, content: 핵심 기능 개발 및 베타 출시.&gt;
-&lt;milestone: 2023년 3분기, title: 정식 출시, badge: purple, content: 전체 서비스 공개 및 마케팅 시작.&gt;
-&lt;milestone: 2024년 1분기, title: 기능 확장, badge: yellow, content: 모바일 앱 및 API 제공 예정.&gt;</div>
     </div>
 
     <!-- ───── 링크 ───── -->
