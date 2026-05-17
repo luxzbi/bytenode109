@@ -650,6 +650,65 @@ app.get('/api/config', (req, res) => {
   res.json({ bytenodeUrl: process.env.BYTENODE_URL || '' });
 });
 
+/* ══ 챗봇 FAQ ══ */
+app.get('/api/chatbot/faqs', async (req, res) => {
+  try {
+    const snap = await db.collection('chatbot_faqs').orderBy('order').get();
+    res.json({ faqs: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/chatbot/faqs', auth, adminOnly, async (req, res) => {
+  try {
+    const { question, answer, followUps } = req.body;
+    if (!question || !answer) return res.status(400).json({ error: '질문과 답변을 입력하세요.' });
+    const snap = await db.collection('chatbot_faqs').orderBy('order', 'desc').limit(1).get();
+    const maxOrder = snap.empty ? 0 : (snap.docs[0].data().order || 0) + 1000;
+    const ref = await db.collection('chatbot_faqs').add({
+      question: question.trim(), answer: answer.trim(),
+      followUps: Array.isArray(followUps) ? followUps : [],
+      order: maxOrder, createdAt: Date.now()
+    });
+    res.json({ id: ref.id });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.put('/api/chatbot/faqs/:id', auth, adminOnly, async (req, res) => {
+  try {
+    const { question, answer, followUps } = req.body;
+    if (!question || !answer) return res.status(400).json({ error: '질문과 답변을 입력하세요.' });
+    await db.collection('chatbot_faqs').doc(req.params.id).update({
+      question: question.trim(), answer: answer.trim(),
+      followUps: Array.isArray(followUps) ? followUps : []
+    });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/chatbot/faqs/:id', auth, adminOnly, async (req, res) => {
+  try {
+    await db.collection('chatbot_faqs').doc(req.params.id).delete();
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.patch('/api/chatbot/faqs/:id/move', auth, adminOnly, async (req, res) => {
+  try {
+    const { dir } = req.body; // 'up' | 'down'
+    const snap = await db.collection('chatbot_faqs').orderBy('order').get();
+    const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const idx = docs.findIndex(d => d.id === req.params.id);
+    if (idx < 0) return res.status(404).json({ error: '항목 없음' });
+    const swapIdx = dir === 'up' ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= docs.length) return res.json({ ok: true });
+    const batch = db.batch();
+    batch.update(db.collection('chatbot_faqs').doc(docs[idx].id), { order: docs[swapIdx].order });
+    batch.update(db.collection('chatbot_faqs').doc(docs[swapIdx].id), { order: docs[idx].order });
+    await batch.commit();
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 /* ══ SPA fallback ══ */
 app.get('*', (req, res) => res.sendFile(path.join(PUB, 'index.html')));
 

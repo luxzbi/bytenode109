@@ -3154,6 +3154,7 @@ async function renderAdmin(app, section) {
     {key:'notices', label:'공지 관리'},
     {key:'reports', label:'신고 관리', danger:true},
     {key:'prompts', label:'프롬프트 관리'},
+    {key:'chatbot', label:'챗봇 FAQ'},
     {key:'stats', label:'통계'},
   ];
   const sidebarItems = adminLinks.map(l=>`<a class="${section===l.key?'active':''}" onclick="showPage('admin','${l.key}')" ${l.danger&&section!==l.key?'style="color:#f87171"':''}>${l.label}</a>`).join('');
@@ -3175,6 +3176,7 @@ async function renderAdmin(app, section) {
   else if (section==='notices') await adminNotices(el);
   else if (section==='reports') await adminReports(el);
   else if (section==='prompts') await adminPrompts(el);
+  else if (section==='chatbot') await adminChatbot(el);
   else if (section==='stats') await adminStats(el);
 }
 
@@ -3467,6 +3469,115 @@ async function adminPrompts(el) {
     </div>`;
   } catch(e) { el.innerHTML=`<p class="err">${e.message}</p>`; }
 }
+async function adminChatbot(el) {
+  const load = async () => {
+    const { faqs } = await api('GET', '/chatbot/faqs');
+    el.innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+        <div class="admin-title" style="margin:0">챗봇 FAQ 관리 <span style="font-size:13px;color:var(--muted)">(${faqs.length}개)</span></div>
+        <button class="btn" id="cbAddBtn" style="font-size:12px;padding:4px 12px">+ FAQ 추가</button>
+      </div>
+      <div id="cbList"></div>`;
+    const list = el.querySelector('#cbList');
+    faqs.forEach((faq, idx) => {
+      const item = document.createElement('div');
+      item.style.cssText = 'background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:12px';
+      item.innerHTML = `
+        <div style="display:flex;align-items:flex-start;gap:10px">
+          <div style="flex:1">
+            <div style="font-weight:600;margin-bottom:4px;color:var(--white)">${escHtml(faq.question)}</div>
+            <div style="font-size:13px;color:var(--muted);line-height:1.55">${escHtml(faq.answer)}</div>
+            ${faq.followUps?.length ? `<div style="margin-top:8px;font-size:12px;color:var(--muted2)">↳ 후속질문 ${faq.followUps.length}개</div>` : ''}
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+            <button class="btn" style="font-size:11px;padding:2px 8px" onclick="cbMove('${faq.id}','up')" ${idx===0?'disabled':''}>↑</button>
+            <button class="btn" style="font-size:11px;padding:2px 8px" onclick="cbMove('${faq.id}','down')" ${idx===faqs.length-1?'disabled':''}>↓</button>
+            <button class="btn" style="font-size:11px;padding:2px 8px" onclick="cbEdit('${faq.id}')">편집</button>
+            <button class="btn danger" style="font-size:11px;padding:2px 8px" onclick="cbDel('${faq.id}')">삭제</button>
+          </div>
+        </div>`;
+      list.appendChild(item);
+    });
+    el.querySelector('#cbAddBtn').onclick = () => cbShowForm(null, null, load);
+  };
+  window.cbMove = async (id, dir) => {
+    await api('PATCH', `/chatbot/faqs/${id}/move`, { dir });
+    load();
+  };
+  window.cbDel = async (id) => {
+    if (!confirm('삭제하시겠습니까?')) return;
+    await api('DELETE', `/chatbot/faqs/${id}`);
+    load();
+  };
+  window.cbEdit = async (id) => {
+    const { faqs } = await api('GET', '/chatbot/faqs');
+    const faq = faqs.find(f => f.id === id);
+    if (faq) cbShowForm(faq.id, faq, load);
+  };
+  await load();
+}
+
+function cbShowForm(id, faq, onSave) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  const followUps = faq?.followUps ? JSON.parse(JSON.stringify(faq.followUps)) : [];
+  const renderFollowUps = () => followUps.map((f, i) => `
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:4px">후속질문 ${i+1}</div>
+      <input class="fu-q" data-i="${i}" value="${escHtml(f.question)}" placeholder="후속 질문" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;color:var(--white);font-size:13px;box-sizing:border-box;margin-bottom:6px">
+      <textarea class="fu-a" data-i="${i}" placeholder="후속 답변" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;color:var(--white);font-size:13px;resize:vertical;min-height:60px;box-sizing:border-box">${escHtml(f.answer)}</textarea>
+      <button onclick="this.closest('[data-fuidx]').remove();followUps.splice(${i},1)" style="font-size:11px;padding:2px 8px;background:none;border:1px solid #f87171;color:#f87171;border-radius:5px;cursor:pointer;margin-top:4px">제거</button>
+    </div>`).join('');
+  overlay.innerHTML = `
+    <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:14px;width:100%;max-width:560px;max-height:88vh;overflow-y:auto;padding:28px 24px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+        <div style="font-size:1.1rem;font-weight:700">${id?'FAQ 편집':'FAQ 추가'}</div>
+        <button id="cbFormClose" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">✕</button>
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">질문</label>
+        <input id="cbQ" value="${escHtml(faq?.question||'')}" placeholder="자주 묻는 질문을 입력하세요" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--white);font-size:14px;box-sizing:border-box">
+      </div>
+      <div style="margin-bottom:16px">
+        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">답변</label>
+        <textarea id="cbA" placeholder="답변을 입력하세요" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--white);font-size:14px;resize:vertical;min-height:90px;box-sizing:border-box">${escHtml(faq?.answer||'')}</textarea>
+      </div>
+      <div style="margin-bottom:8px">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px">후속 질문 (선택)</div>
+        <div id="cbFuList">${renderFollowUps()}</div>
+        <button id="cbAddFu" style="font-size:12px;padding:5px 12px;background:var(--bg3);border:1px solid var(--border2);color:var(--muted);border-radius:6px;cursor:pointer;width:100%;margin-top:4px">+ 후속질문 추가</button>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px">
+        <button id="cbFormClose2" class="btn" style="font-size:13px">취소</button>
+        <button id="cbFormSave" class="btn" style="font-size:13px;background:var(--accent)">저장</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#cbFormClose').onclick = overlay.querySelector('#cbFormClose2').onclick = () => overlay.remove();
+  overlay.querySelector('#cbAddFu').onclick = () => {
+    followUps.push({ question: '', answer: '' });
+    overlay.querySelector('#cbFuList').innerHTML = renderFollowUps();
+    overlay.querySelectorAll('.fu-q').forEach(inp => inp.oninput = e => { followUps[+e.target.dataset.i].question = e.target.value; });
+    overlay.querySelectorAll('.fu-a').forEach(ta => ta.oninput = e => { followUps[+e.target.dataset.i].answer = e.target.value; });
+  };
+  const syncFu = () => {
+    overlay.querySelectorAll('.fu-q').forEach(inp => followUps[+inp.dataset.i] && (followUps[+inp.dataset.i].question = inp.value));
+    overlay.querySelectorAll('.fu-a').forEach(ta => followUps[+ta.dataset.i] && (followUps[+ta.dataset.i].answer = ta.value));
+  };
+  overlay.querySelector('#cbFormSave').onclick = async () => {
+    syncFu();
+    const question = overlay.querySelector('#cbQ').value.trim();
+    const answer = overlay.querySelector('#cbA').value.trim();
+    if (!question || !answer) return alert('질문과 답변을 입력하세요.');
+    if (id) await api('PUT', `/chatbot/faqs/${id}`, { question, answer, followUps });
+    else await api('POST', '/chatbot/faqs', { question, answer, followUps });
+    overlay.remove();
+    await onSave();
+  };
+}
+
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
 async function adminStats(el) {
   try {
     const s = await api('GET', '/admin/series-stats');
@@ -8941,6 +9052,124 @@ if (token) {
     renderHeader();
   }).catch(() => { logout(); });
 }
+/* ── 챗봇 위젯 ── */
+</script>
+
+<!-- 챗봇 위젯 -->
+<div id="chatbotWidget" style="position:fixed;right:20px;bottom:20px;z-index:9000;display:flex;flex-direction:column;align-items:flex-end;gap:10px">
+  <div id="chatbotWindow" style="display:none;width:340px;max-height:70vh;min-height:300px;background:rgba(18,18,28,.96);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.12);border-radius:16px;overflow:hidden;display:none;flex-direction:column;box-shadow:0 12px 48px rgba(0,0,0,.6)">
+    <div style="padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04)">
+      <span style="font-size:20px">🤖</span>
+      <div>
+        <div style="font-size:14px;font-weight:700;color:#e2e8f0">bytenode 챗봇</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.45)">자주 묻는 질문</div>
+      </div>
+      <button onclick="chatbotClose()" style="margin-left:auto;background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div id="chatbotMessages" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth"></div>
+    <div id="chatbotBtns" style="padding:10px 12px;border-top:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:6px"></div>
+  </div>
+  <button id="chatbotToggle" onclick="chatbotToggle()" style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 20px rgba(59,130,246,.5);transition:transform .15s" onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'">💬</button>
+</div>
+
+<script>
+let _cbFaqs = [], _cbOpen = false, _cbHistory = [];
+
+async function chatbotLoadFaqs() {
+  try {
+    const data = await fetch('/api/chatbot/faqs').then(r=>r.json());
+    _cbFaqs = data.faqs || [];
+  } catch(e) { _cbFaqs = []; }
+}
+
+function chatbotToggle() {
+  _cbOpen = !_cbOpen;
+  const win = document.getElementById('chatbotWindow');
+  if (_cbOpen) {
+    win.style.display = 'flex';
+    _cbHistory = [];
+    chatbotShowFaqs();
+  } else {
+    win.style.display = 'none';
+  }
+  document.getElementById('chatbotToggle').textContent = _cbOpen ? '✕' : '💬';
+}
+function chatbotClose() { _cbOpen = false; document.getElementById('chatbotWindow').style.display='none'; document.getElementById('chatbotToggle').textContent='💬'; }
+
+function chatbotShowFaqs() {
+  document.getElementById('chatbotMessages').innerHTML = '';
+  _cbHistory = [];
+  const btns = document.getElementById('chatbotBtns');
+  btns.innerHTML = '';
+  chatbotBotMsg('안녕하세요! 무엇이 궁금하신가요? 아래에서 질문을 선택해 주세요.');
+  _cbFaqs.forEach(faq => {
+    const btn = document.createElement('button');
+    btn.textContent = faq.question;
+    btn.style.cssText = 'text-align:left;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#e2e8f0;border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer;transition:background .15s;line-height:1.45';
+    btn.onmouseover = () => btn.style.background = 'rgba(255,255,255,.12)';
+    btn.onmouseout = () => btn.style.background = 'rgba(255,255,255,.07)';
+    btn.onclick = () => chatbotAsk(faq);
+    btns.appendChild(btn);
+  });
+}
+
+function chatbotAsk(faq) {
+  chatbotUserMsg(faq.question);
+  setTimeout(() => {
+    chatbotBotMsg(faq.answer);
+    const btns = document.getElementById('chatbotBtns');
+    btns.innerHTML = '';
+    if (faq.followUps?.length) {
+      const label = document.createElement('div');
+      label.textContent = '추가로 궁금한 점이 있으신가요?';
+      label.style.cssText = 'font-size:12px;color:rgba(255,255,255,.45);padding:0 2px 4px';
+      btns.appendChild(label);
+      faq.followUps.forEach(fu => {
+        const btn = document.createElement('button');
+        btn.textContent = fu.question;
+        btn.style.cssText = 'text-align:left;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#e2e8f0;border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer;transition:background .15s;line-height:1.45';
+        btn.onmouseover = () => btn.style.background = 'rgba(255,255,255,.12)';
+        btn.onmouseout = () => btn.style.background = 'rgba(255,255,255,.07)';
+        btn.onclick = () => { chatbotUserMsg(fu.question); setTimeout(() => { chatbotBotMsg(fu.answer); chatbotShowResetBtn(); }, 220); };
+        btns.appendChild(btn);
+      });
+    }
+    chatbotShowResetBtn();
+  }, 220);
+}
+
+function chatbotShowResetBtn() {
+  const btns = document.getElementById('chatbotBtns');
+  const existing = btns.querySelector('.cb-reset');
+  if (existing) return;
+  const btn = document.createElement('button');
+  btn.className = 'cb-reset';
+  btn.textContent = '🏠 처음으로';
+  btn.style.cssText = 'background:none;border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.5);border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;margin-top:2px;transition:color .15s';
+  btn.onmouseover = () => btn.style.color='rgba(255,255,255,.85)';
+  btn.onmouseout = () => btn.style.color='rgba(255,255,255,.5)';
+  btn.onclick = () => chatbotShowFaqs();
+  btns.appendChild(btn);
+}
+
+function chatbotUserMsg(text) {
+  const msgs = document.getElementById('chatbotMessages');
+  const div = document.createElement('div');
+  div.style.cssText = 'align-self:flex-end;max-width:80%;background:rgba(59,130,246,.25);border:1px solid rgba(59,130,246,.4);color:#e2e8f0;border-radius:12px 12px 2px 12px;padding:9px 13px;font-size:13px;line-height:1.5;word-break:break-word';
+  div.textContent = text;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+function chatbotBotMsg(text) {
+  const msgs = document.getElementById('chatbotMessages');
+  const div = document.createElement('div');
+  div.style.cssText = 'align-self:flex-start;max-width:85%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:#e2e8f0;border-radius:12px 12px 12px 2px;padding:9px 13px;font-size:13px;line-height:1.55;word-break:break-word';
+  div.textContent = text;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+chatbotLoadFaqs();
 </script>
 </body>
 </html>
