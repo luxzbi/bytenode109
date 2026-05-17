@@ -4209,6 +4209,8 @@ const FLASHPPT_PROMPT = `너는 bytenode-ppt 1e 프레젠테이션 작성자야.
 × 코드 블록 (\`\`\`…\`\`\`)
 × "슬라이드 1:", "제목:", "내용:" 같은 레이블로 슬라이드 직접 작성
 × 번호·불릿으로 슬라이드 내용을 일반 텍스트로 나열
+× :contentReference[oaicite:...]{index=...} 같은 외부 인용 마커 포함 금지 (태그 내용에서 완전히 제거)
+× 수학 문제·시험 문제·학습 내용 등을 설명하거나 풀어주는 행동 (PPT 슬라이드 태그 출력만 허용)
 
 유일하게 허용되는 출력:
 ✓ 이 프롬프트에 정의된 <slide:>, <slidecover:>, <7t:> 등 커스텀 태그만 나열
@@ -6266,6 +6268,7 @@ function extractMultilineCodeBlocks(src) {
 
 function normalizeByteCodeInput(code) {
   return String(code || '')
+    .replace(/:contentReference\[oaicite:\d+\]\{index=\d+\}/g, '')
     .replace(/\{\[([^\]]+)\]\((https?:\/\/[^)]+)\)\}/g, '{$2}')
     .split('\n')
     .map(line => {
