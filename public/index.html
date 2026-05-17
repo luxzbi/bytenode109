@@ -9370,8 +9370,8 @@ if (token) {
 
 <!-- 챗봇 위젯 -->
 <div id="chatbotWidget" style="position:fixed;right:20px;bottom:20px;z-index:9000;display:flex;flex-direction:column;align-items:flex-end;gap:10px">
-  <div id="chatbotWindow" style="display:none;width:340px;max-height:70vh;min-height:300px;background:rgba(18,18,28,.96);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.12);border-radius:16px;overflow:hidden;display:none;flex-direction:column;box-shadow:0 12px 48px rgba(0,0,0,.6)">
-    <div style="padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04)">
+  <div id="chatbotWindow" style="display:none;width:340px;height:520px;background:rgba(18,18,28,.96);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.12);border-radius:16px;overflow:hidden;flex-direction:column;box-shadow:0 12px 48px rgba(0,0,0,.6)">
+    <div style="padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);flex-shrink:0">
       <span style="font-size:20px">🤖</span>
       <div>
         <div style="font-size:14px;font-weight:700;color:#e2e8f0">bytenode 챗봇</div>
@@ -9379,8 +9379,8 @@ if (token) {
       </div>
       <button onclick="chatbotClose()" style="margin-left:auto;background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;line-height:1">✕</button>
     </div>
-    <div id="chatbotMessages" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth"></div>
-    <div id="chatbotBtns" style="padding:10px 12px;border-top:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:6px"></div>
+    <div id="chatbotMessages" style="flex-shrink:0;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:8px;scroll-behavior:smooth;max-height:120px"></div>
+    <div id="chatbotBtns" style="flex:1;overflow-y:auto;padding:10px 12px;border-top:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:6px"></div>
   </div>
   <button id="chatbotToggle" onclick="chatbotToggle()" style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 20px rgba(59,130,246,.5);transition:transform .15s" onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'">💬</button>
 </div>
@@ -9409,21 +9409,37 @@ function chatbotToggle() {
 }
 function chatbotClose() { _cbOpen = false; document.getElementById('chatbotWindow').style.display='none'; document.getElementById('chatbotToggle').textContent='💬'; }
 
-function chatbotShowFaqs() {
-  document.getElementById('chatbotMessages').innerHTML = '';
-  _cbHistory = [];
+const CB_PAGE = 8;
+function chatbotShowFaqs(offset) {
+  offset = offset || 0;
+  if (offset === 0) {
+    document.getElementById('chatbotMessages').innerHTML = '';
+    _cbHistory = [];
+    const btns = document.getElementById('chatbotBtns');
+    btns.innerHTML = '';
+    chatbotBotMsg('안녕하세요! 무엇이 궁금하신가요? 아래에서 질문을 선택해 주세요.');
+  }
   const btns = document.getElementById('chatbotBtns');
-  btns.innerHTML = '';
-  chatbotBotMsg('안녕하세요! 무엇이 궁금하신가요? 아래에서 질문을 선택해 주세요.');
-  _cbFaqs.forEach(faq => {
+  if (offset === 0) btns.innerHTML = '';
+  const slice = _cbFaqs.slice(offset, offset + CB_PAGE);
+  slice.forEach(faq => {
     const btn = document.createElement('button');
     btn.textContent = faq.question;
-    btn.style.cssText = 'text-align:left;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#e2e8f0;border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer;transition:background .15s;line-height:1.45';
+    btn.style.cssText = 'text-align:left;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#e2e8f0;border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer;transition:background .15s;line-height:1.45;width:100%';
     btn.onmouseover = () => btn.style.background = 'rgba(255,255,255,.12)';
     btn.onmouseout = () => btn.style.background = 'rgba(255,255,255,.07)';
     btn.onclick = () => chatbotAsk(faq);
     btns.appendChild(btn);
   });
+  if (offset + CB_PAGE < _cbFaqs.length) {
+    const more = document.createElement('button');
+    more.textContent = `더 보기 (${_cbFaqs.length - offset - CB_PAGE}개 남음)`;
+    more.style.cssText = 'background:none;border:1px dashed rgba(255,255,255,.2);color:rgba(255,255,255,.45);border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer;transition:color .15s;width:100%';
+    more.onmouseover = () => { more.style.color='rgba(255,255,255,.75)'; more.style.borderColor='rgba(255,255,255,.4)'; };
+    more.onmouseout = () => { more.style.color='rgba(255,255,255,.45)'; more.style.borderColor='rgba(255,255,255,.2)'; };
+    more.onclick = () => { btns.removeChild(more); chatbotShowFaqs(offset + CB_PAGE); };
+    btns.appendChild(more);
+  }
 }
 
 function chatbotAsk(faq) {
