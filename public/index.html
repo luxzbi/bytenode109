@@ -4392,11 +4392,72 @@ SVG 도형 fill에도 grad(색1,색2)를 사용할 수 있다.
 4. 배경은 slidebg + meshbg 조합을 적극 사용하되, 텍스트 대비를 최우선으로 한다.
 5. 한 슬라이드에는 핵심 메시지 하나만 둔다. 복잡하면 슬라이드를 나눈다.
 
+【🎨 인라인 글자 색상 · 그라데이션】
+※ 어떤 텍스트 태그 안에서도 단어·문장 단위로 색을 지정할 수 있다.
+
+<c: #색 | 텍스트>                     → 특정 색깔 인라인 스팬
+<gc: #색1,#색2 | 텍스트>             → 단어/구절에 그라데이션 적용
+<colortext: #f00:단어 | 일반 | #0af:다른단어>  → 여러 색 단어를 한 줄에 나열
+
+예시:
+<bt: <c: #38bdf8 | AI>는 <gc: #f59e0b,#ef4444 | 세상을 바꾼다>>
+→ "AI"는 하늘색, "세상을 바꾼다"는 주황→빨강 그라데이션으로 표시됨
+
+<colortext: #38bdf8:HBM | 시장 점유율 | #4ade80:80% | 달성>
+→ 각 단어가 지정 색으로 표시됨
+
+셀 단위 색상 (<xtable:> 전용): 셀값 뒤에 ::#색 추가
+예: GPU 서버::##4ade80 (셀 글자가 초록색)
+
+【📊 고급 표 (xtable)】
+<xtable: H1|H2|H3 // R1C1|R1C2|R1C3 // R2C1|R2C2|R2C3 | head:#색 | stripe:#색 | border:#색>
+→ // 로 행 구분, | 로 열 구분. head/stripe/border 색 지정 가능.
+→ 셀 글자 색은 값 뒤에 ::#색으로 지정 (예: +200%::#4ade80)
+
+예시:
+<xtable: 구분|수치|상태 // GPU 서버|+320%|급성장::#4ade80 // DRAM|+185%|호조::#60a5fa // NAND|-12%|조정::#f87171 | head:#1e40af | stripe:#0f172a>
+
+【🖼 배경 패널 · 분할 배경】
+※ freebox 안에서 첫 번째 태그로 사용하면 그 freebox의 배경색이 됨.
+※ 단독 사용 시에는 장식용 색 블록으로 표시됨.
+
+<bgblock: #색>                          → 단색 배경 패널
+<bgblock: #색1,#색2>                   → 그라데이션 배경 패널
+<bgblock: #색 | 12px>                  → 모서리 둥글기 지정
+<bgsplit: v | 45% | #색1 | #색2>      → 좌우 2분할 배경 (v=세로 분할)
+<bgsplit: h | 60% | #색1 | #색2>      → 상하 2분할 배경 (h=가로 분할)
+
+Canva형 분할 배경 예시 (freebox와 조합):
+<freebox: 0,0,45,100,0>
+<bgblock: #1e3a8a,#0f172a>
+<endbox>
+<freebox: 55,0,45,100,0>
+<bgblock: #111827>
+<endbox>
+<freebox: 2,5,42,90,1>
+<gradtext: #60a5fa | #a78bfa | 왼쪽 내용 | 8>
+<endbox>
+<freebox: 55,10,40,80,1>
+<bt: 오른쪽 텍스트>
+<endbox>
+
+【🏆 AI 디자인 팁 — 자율 편집 시 반드시 참고】
+1. 색 대비 법칙: 어두운 배경(#0f172a 계열)에는 밝은 텍스트(#e2e8f0, #60a5fa), 밝은 배경에는 어두운 텍스트.
+2. 3색 원칙: 슬라이드당 메인 색 1개 + 강조 색 1개 + 중립 색(회색·흰색) 1개로 제한.
+3. 여백의 힘: 콘텐츠가 적을수록 전달력이 강하다. 슬라이드 채우기에 집착 금지.
+4. 비대칭 레이아웃: 60-40 또는 40-60 파티션이 50-50보다 역동적으로 보임.
+5. 포인트 컬러: gradtext + gradbox는 슬라이드당 1~2개로 아껴쓸 때 임팩트가 강함.
+6. 배경 레이어: slidebg(기본 배경) + freebox bgblock(장식 패널) + meshbg(빛번짐) 세 레이어를 조합.
+7. 타이포 위계: 제목(7t~9t 또는 gradtext) → 부제목(5t~6t) → 본문(4t~5t, bt) → 캡션(3t) 순서 유지.
+8. 차트는 이야기를 한다: 차트 타이틀에 "~가 ~% 증가" 같은 핵심 인사이트 문장을 넣어라.
+9. 왼쪽 정렬 우선: 가운데 정렬은 표지와 한 줄 강조에만. 본문은 왼쪽 정렬이 읽기 편하다.
+10. 슬라이드 번호 확인: 내용이 6~7개 이상이면 슬라이드를 분리. 한 페이지에 핵심 1개.
+
 【시작 방법 — 반드시 따를 것】
-사용자가 주제, 원고, 기존 PPT 코드, 수정 요청 중 하나라도 제공했다면 바로 작업한다.
-정보가 충분하면 추가 질문 없이 flashppt 태그만 출력하고, 디자인·레이아웃·강조·색상은 자율적으로 개선한다.
-기존 코드를 수정하라는 요청이면 핵심 내용은 유지하고 문제가 있는 슬라이드의 가독성, 배치, 색 대비, 그래프/도형 표현을 우선 고친다.
-필수 정보가 전혀 없을 때만 한 번 질문한다: "어떤 주제로 PPT 발표자료를 만들어 드릴까요?"
+처음 이 프롬프트를 받으면 무조건 먼저 이렇게 말한다:
+"어떤 주제로 PPT를 만들까요? 주제와 내용, 자료를 알려주세요!"
+그 이후 사용자가 내용을 제공하면 추가 질문 없이 바로 태그만 출력한다.
+기존 코드를 수정하라는 요청이면 핵심 내용은 유지하고 가독성, 배치, 색 대비, 그래프/도형 표현을 우선 고친다.
 코드 블록(\`\`\`) 없이 태그만 바로 출력해.`;
 
 /* ── FLASHREPORT PROMPT ── */
@@ -6416,6 +6477,14 @@ function renderInlineContent(content) {
       else if (b.type === 'mark') parts.push(`<mark style="background:#ffe066;color:#222;padding:0 4px;border-radius:3px">${renderInlineContent(b.content)}</mark>`);
       else if (b.type === 'codeinline') parts.push(`<code style="font-family:Consolas,monospace;background:rgba(255,255,255,.1);color:#aef;padding:2px 8px;border-radius:4px;font-size:.9em">${renderInlineContent(b.content)}</code>`);
       else if (b.type === 'badge') parts.push(`<span style="display:inline-block;background:rgba(255,255,255,.12);color:var(--accent);font-size:.78rem;padding:2px 10px;border-radius:20px;border:1px solid var(--border2);margin:2px 2px">${renderInlineContent(b.content)}</span>`);
+      else if (b.type === 'colorspan') {
+        const col = /^#[0-9a-fA-F]{3,8}$/.test(b.color||'') ? b.color : 'var(--accent)';
+        parts.push(`<span style="color:${col}">${renderInlineContent(b.content)}</span>`);
+      }
+      else if (b.type === 'gradspan') {
+        const grad = makeLinearGradientCss(b.c1, b.c2);
+        parts.push(`<span style="background:${grad};-webkit-background-clip:text;background-clip:text;color:transparent;display:inline;font-weight:inherit">${renderInlineContent(b.content)}</span>`);
+      }
       else if (b.type === 'text') {
         const sizePx = [null,10,11,12,14,16,20,23,26,30][b.size] || 16;
         const colorStyle = b.color ? `color:${b.color.startsWith('#')?b.color:'var(--accent)'}` : '';
@@ -7226,6 +7295,56 @@ function parseCmd(cmd) {
     return { type:'svg-text', x:p[0]||'50', y:p[1]||'50', text:p[2]||'', color:p[3]||'#e8e8e8', size:p[4]||'14' };
   }
   if (/^endsvg$/.test(cmd.trim())) return { type:'svg-close' };
+
+  // ── 인라인 색상 스팬 <c: #색 | 텍스트> ──
+  if (/^c:\s*/.test(cmd)) {
+    const p = cmd.slice(cmd.indexOf(':')+1).split('|').map(s=>s.trim());
+    return { type:'colorspan', color: p[0]||'#60a5fa', content: p.slice(1).join('|') };
+  }
+  // ── 인라인 그라데이션 스팬 <gc: #색1,#색2 | 텍스트> ──
+  if (/^gc:\s*/.test(cmd)) {
+    const p = cmd.slice(cmd.indexOf(':')+1).split('|').map(s=>s.trim());
+    const colors = (p[0]||'#60a5fa,#a78bfa').split(',').map(s=>s.trim());
+    return { type:'gradspan', c1: colors[0]||'#60a5fa', c2: colors[1]||'#a78bfa', content: p.slice(1).join('|') };
+  }
+  // ── 멀티컬러 텍스트 <colortext: #f00:단어 | 일반 | #0f0:초록> ──
+  if (/^colortext:\s*/.test(cmd)) {
+    const items = cmd.slice(cmd.indexOf(':')+1).split('|').map(s => {
+      const s2 = s.trim();
+      const m = s2.match(/^(#[0-9a-fA-F]{3,8}):(.*)/);
+      return m ? { color: m[1], text: m[2].trim() } : { color: null, text: s2 };
+    }).filter(i=>i.text);
+    return { type:'colortext', items };
+  }
+  // ── 배경 패널 <bgblock: 색상> or <bgblock: #c1,#c2 | 둥글기> ──
+  if (/^bgblock:\s*/.test(cmd)) {
+    const p = cmd.slice(cmd.indexOf(':')+1).split('|').map(s=>s.trim());
+    const colors = (p[0]||'#1e3a8a').split(',').map(s=>s.trim());
+    const radius = p[1]||'0px';
+    const bg = colors.length > 1
+      ? `linear-gradient(135deg,${colors[0]},${colors[1]})`
+      : colors[0];
+    return { type:'bgblock', bg, radius };
+  }
+  // ── 배경 2분할 <bgsplit: v|h | 비율% | 색1 | 색2> ──
+  if (/^bgsplit:\s*/.test(cmd)) {
+    const p = cmd.slice(cmd.indexOf(':')+1).split('|').map(s=>s.trim());
+    const dir = (p[0]||'v').toLowerCase();
+    return { type:'bgsplit', dir, ratio: parseFloat((p[1]||'50').replace('%',''))||50, c1: p[2]||'#1e3a8a', c2: p[3]||'#0a0f1e' };
+  }
+  // ── 고급 표 <xtable: H1|H2 // R1|R2 // R3|R4 | head:#색 | stripe:#색> ──
+  if (/^xtable:\s*/.test(cmd)) {
+    const raw = cmd.slice(cmd.indexOf(':')+1);
+    const headMatch = raw.match(/\|\s*head:(#[0-9a-fA-F]{3,8})/i);
+    const stripeMatch = raw.match(/\|\s*stripe:(#[0-9a-fA-F]{3,8})/i);
+    const borderMatch = raw.match(/\|\s*border:(#[0-9a-fA-F]{3,8})/i);
+    const clean = raw
+      .replace(/\|\s*head:#[0-9a-fA-F]{3,8}/gi,'')
+      .replace(/\|\s*stripe:#[0-9a-fA-F]{3,8}/gi,'')
+      .replace(/\|\s*border:#[0-9a-fA-F]{3,8}/gi,'');
+    const rows = clean.split('//').map(r=>r.split('|').map(c=>c.trim())).filter(r=>r.some(Boolean));
+    return { type:'xtable', rows, headColor: headMatch?.[1]||null, stripeColor: stripeMatch?.[1]||null, borderColor: borderMatch?.[1]||'rgba(255,255,255,.15)' };
+  }
 
   return null; // 알 수 없는 명령어 → 무시
 }
@@ -8432,13 +8551,57 @@ function renderBlocks(blocks, _isInner) {
         });
         html += `</div>`; break;
       }
+      case 'colortext': {
+        const spans = (b.items||[]).map(item => {
+          const txt = esc(item.text);
+          return item.color ? `<span style="color:${esc(item.color)}">${txt}</span>` : txt;
+        });
+        html += `<div style="margin:8px 0;line-height:1.7;font-size:1rem;flex-wrap:wrap;display:flex;gap:4px;align-items:baseline">${spans.join('')}</div>`;
+        break;
+      }
+      case 'bgblock': {
+        html += `<div style="width:100%;min-height:14px;border-radius:${esc(b.radius||'0px')};background:${esc(b.bg)};margin:4px 0"></div>`;
+        break;
+      }
+      case 'bgsplit': {
+        const isV = b.dir !== 'h';
+        html += `<div style="width:100%;min-height:70px;border-radius:8px;background:linear-gradient(${isV?'90deg':'180deg'},${esc(b.c1)} ${b.ratio}%,${esc(b.c2)} ${b.ratio}%);margin:8px 0"></div>`;
+        break;
+      }
+      case 'xtable': {
+        if (!b.rows?.length) break;
+        const [head, ...body] = b.rows;
+        const hBg = b.headColor || '#1e40af';
+        const bdr = b.borderColor || 'rgba(255,255,255,.15)';
+        const renderXCell = c => { const m = String(c||'').match(/^(.*?)::(#[0-9a-fA-F]{3,8})$/); return m ? { text: m[1], color: m[2] } : { text: c, color: null }; };
+        const mkTh = cells => `<tr>${cells.map(c=>{ const {text}=renderXCell(c); return `<th style="border:1px solid ${bdr};padding:9px 14px;text-align:left;font-size:13px;font-weight:700;background:${hBg};color:#fff">${esc(text)}</th>`; }).join('')}</tr>`;
+        const mkTd = (cells, ri) => {
+          const rowBg = b.stripeColor && ri%2===0 ? b.stripeColor : 'var(--bg2)';
+          return `<tr>${cells.map(c=>{ const {text,color}=renderXCell(c); return `<td style="border:1px solid ${bdr};padding:8px 14px;font-size:13px;background:${rowBg};${color?`color:${color};font-weight:600`:''}">${esc(text)}</td>`; }).join('')}</tr>`;
+        };
+        html += `<div style="overflow-x:auto;margin:12px 0;border-radius:8px;overflow:hidden;border:1px solid ${bdr}">
+          <table style="border-collapse:collapse;width:100%;min-width:280px">
+            <thead>${mkTh(head)}</thead>
+            <tbody>${body.map((r,i)=>mkTd(r,i)).join('')}</tbody>
+          </table></div>`;
+        break;
+      }
       case 'freecanvas': {
         // On mobile (<600px), stack boxes vertically instead of absolute 16:9
         html += `<div class="freecanvas-wrap" style="position:relative;width:100%;padding-top:56.25%;margin:8px 0;overflow:hidden">
           <div style="position:absolute;inset:0">`;
         (b.boxes||[]).forEach(fb => {
-          html += `<div style="position:absolute;left:${fb.x}%;top:${fb.y}%;width:${fb.w}%;height:${fb.h}%;z-index:${fb.z};overflow:hidden;background:transparent;padding:6px;box-sizing:border-box">`;
-          html += renderBlocks(fb.blocks, true);
+          // bgblock/bgsplit as first block → use as freebox background
+          let fbBg = 'transparent';
+          let contentBlocks = fb.blocks;
+          const first = fb.blocks[0];
+          if (first?.type === 'bgblock') { fbBg = first.bg; contentBlocks = fb.blocks.slice(1); }
+          else if (first?.type === 'bgsplit') {
+            fbBg = `linear-gradient(${first.dir!=='h'?'90deg':'180deg'},${first.c1} ${first.ratio}%,${first.c2} ${first.ratio}%)`;
+            contentBlocks = fb.blocks.slice(1);
+          }
+          html += `<div style="position:absolute;left:${fb.x}%;top:${fb.y}%;width:${fb.w}%;height:${fb.h}%;z-index:${fb.z};overflow:hidden;background:${fbBg};padding:6px;box-sizing:border-box">`;
+          html += renderBlocks(contentBlocks, true);
           html += `</div>`;
         });
         html += `</div></div>
