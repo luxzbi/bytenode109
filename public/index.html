@@ -4246,6 +4246,10 @@ $\\ce{H2O}$  $\\ce{CO2}$  $\\ce{Na+ + Cl- -> NaCl}$
 <kpi: 값 | 변화 | 라벨 | 색>               → KPI 박스 (+/-로 방향 표시)
 <pullquote: 인용문 | 출처>                  → 대형 인용문 강조
 <tagcloud: 단어:크기 | 단어:크기>           → 태그 클라우드 (크기로 빈도 표현)
+<statcount: 값 | 라벨 | #색 | prefix | suffix> → KPI 카운트업 애니메이션 숫자 카드 (0→목표값)
+  예: <statcount: 4200 | AI 사용자 | #60a5fa | | 만>
+<cycle: 단계1 | 단계2 | 단계3 | accent:#색>    → 순환 프로세스 다이어그램 (3~6단계)
+  예: <cycle: 기획 | 개발 | 배포 | 피드백 | accent:#38bdf8>
 
 flashinfo 예시:
 <timeline: 2020:서비스 출시 | 2021:사용자 100만 돌파 | 2022:글로벌 진출 | 2023:매출 1조 달성>
@@ -4581,6 +4585,30 @@ Canva형 분할 배경 예시 (freebox와 조합):
 <magazine: 이미지URL | 제목 | 내용 | left/right>
 → 이미지 + 텍스트 에디토리얼 레이아웃. left/right로 이미지 위치 지정 (기본 left).
 예: <magazine: /uploads/ai.jpg | AI 혁신의 중심 | 생성형 AI는 기업 생산성을 크게 향상시키고 있습니다. | left>
+
+【🆕 고급 시각 효과 태그 (Gemini Research 기반)】
+
+<glasspanel: 텍스트 | blur | opacity | #border>
+→ 글래스모피즘 frosted-glass 패널. 배경이 뿌옇게 보이는 유리 효과. 어두운 배경에서 극적 효과.
+예: <glasspanel: AI가 바꾸는 세상 — 핵심 메시지 | 16px | 0.1 | rgba(255,255,255,.2)>
+
+<hollow: #색 | 굵기 | 텍스트 | 크기>
+→ 투명 내부 + 색상 테두리만 남는 아웃라인 텍스트. 이미지 위 대형 제목에 최적.
+예: <hollow: #60a5fa | 3px | FUTURE | 9>
+
+<statcount: 값 | 라벨 | #색 | prefix | suffix>
+→ KPI 숫자 카드 — 콘텐츠 로드 시 0부터 목표값까지 카운트업 애니메이션.
+예: <statcount: 4200 | AI 서비스 사용자 | #60a5fa | | 만>
+예: <statcount: 98.7 | 고객 만족도 | #4ade80 | | %>
+
+<cycle: 단계1 | 단계2 | 단계3 | ... | accent:#색>
+→ 순환 프로세스 다이어그램. 번호 원 + 화살표 + 마지막에 순환 화살표(↩). 3~6단계에 적합.
+예: <cycle: 기획 | 설계 | 개발 | 테스트 | 배포 | 피드백 | accent:#38bdf8>
+
+<mockup: laptop/mobile/tablet | 이미지URL | 제목>
+→ CSS 디바이스 프레임 안에 이미지를 넣어 실제 제품 데모처럼 보여주는 목업.
+예: <mockup: laptop | /uploads/dashboard.png | 대시보드 미리보기>
+예: <mockup: mobile | /uploads/app.png | 앱 화면>
 
 【🏆 AI 디자인 팁 — 자율 편집 시 반드시 참고】
 1. 색 대비 법칙: 어두운 배경(#0f172a 계열)에는 밝은 텍스트(#e2e8f0, #60a5fa), 밝은 배경에는 어두운 텍스트.
@@ -7537,6 +7565,34 @@ function parseCmd(cmd) {
     const p = cmd.slice(cmd.indexOf(':')+1).split('|').map(s=>s.trim());
     return { type:'magazine', img: p[0]||'', title: p[1]||'', body: p[2]||'', side: (p[3]||'left').toLowerCase() };
   }
+  // ── 글래스모피즘 패널 <glasspanel: 텍스트 | blur | opacity | #border> ──
+  if (/^glasspanel:\s*/.test(cmd)) {
+    const p = cmd.slice(cmd.indexOf(':')+1).split('|').map(s=>s.trim());
+    return { type:'glasspanel', text: p[0]||'', blur: p[1]||'14px', opacity: p[2]||'0.08', border: p[3]||'rgba(255,255,255,.18)' };
+  }
+  // ── 아웃라인(중공) 텍스트 <hollow: #색 | 굵기 | 텍스트 | 크기> ──
+  if (/^hollow:\s*/.test(cmd)) {
+    const p = cmd.slice(cmd.indexOf(':')+1).split('|').map(s=>s.trim());
+    return { type:'hollow', color: p[0]||'#60a5fa', stroke: p[1]||'2px', text: p[2]||'', size: parseInt(p[3]||'7')||7 };
+  }
+  // ── KPI 애니메이션 카운터 <statcount: 값 | 라벨 | #색 | prefix | suffix> ──
+  if (/^statcount:\s*/.test(cmd)) {
+    const p = cmd.slice(cmd.indexOf(':')+1).split('|').map(s=>s.trim());
+    return { type:'statcount', val: p[0]||'0', label: p[1]||'', color: p[2]||'#60a5fa', prefix: p[3]||'', suffix: p[4]||'' };
+  }
+  // ── 순환 프로세스 다이어그램 <cycle: 단계1 | 단계2 | ... | accent:#색> ──
+  if (/^cycle:\s*/.test(cmd)) {
+    const raw = cmd.slice(cmd.indexOf(':')+1);
+    const accentMatch = raw.match(/\|\s*accent:(#[0-9a-fA-F]{3,8})/i);
+    const accent = accentMatch?.[1]||'#60a5fa';
+    const steps = raw.replace(/\|\s*accent:#[0-9a-fA-F]{3,8}/gi,'').split('|').map(s=>s.trim()).filter(Boolean);
+    return { type:'cycle', steps, accent };
+  }
+  // ── 디바이스 프레임 목업 <mockup: laptop/mobile/tablet | 이미지URL | 제목> ──
+  if (/^mockup:\s*/.test(cmd)) {
+    const p = cmd.slice(cmd.indexOf(':')+1).split('|').map(s=>s.trim());
+    return { type:'mockup', device: (p[0]||'laptop').toLowerCase(), img: p[1]||'', title: p[2]||'' };
+  }
 
   return null; // 알 수 없는 명령어 → 무시
 }
@@ -8852,6 +8908,87 @@ function renderBlocks(blocks, _isInner) {
         </div>`;
         break;
       }
+      case 'glasspanel': {
+        const blurVal = esc(b.blur||'14px');
+        const bgAlpha = parseFloat(b.opacity||'0.08');
+        const bdrCol = esc(b.border||'rgba(255,255,255,.18)');
+        html += `<div style="background:rgba(255,255,255,${bgAlpha});backdrop-filter:blur(${blurVal});-webkit-backdrop-filter:blur(${blurVal});border:1px solid ${bdrCol};border-radius:14px;padding:18px 22px;margin:12px 0;color:var(--text);line-height:1.75;font-size:14px;box-shadow:0 4px 24px rgba(0,0,0,.18)">${renderInlineContent(b.text)}</div>`;
+        break;
+      }
+      case 'hollow': {
+        const fsMap = {1:'.75rem',2:'.85rem',3:'1rem',4:'1.2rem',5:'1.4rem',6:'1.7rem',7:'2.1rem',8:'2.8rem',9:'3.5rem'};
+        const fs = fsMap[Math.min(9,Math.max(1,b.size||7))]||'2.1rem';
+        const col = /^#[0-9a-fA-F]{3,8}$/.test(b.color||'') ? b.color : '#60a5fa';
+        const sw = b.stroke||'2px';
+        html += `<div style="text-align:center;margin:14px 0;padding:8px 0"><span style="font-size:${fs};font-weight:900;-webkit-text-stroke:${sw} ${esc(col)};color:transparent;display:inline-block;letter-spacing:-.01em;line-height:1.2">${esc(b.text)}</span></div>`;
+        break;
+      }
+      case 'statcount': {
+        const col = /^#[0-9a-fA-F]{3,8}$/.test(b.color||'') ? b.color : '#60a5fa';
+        html += `<div style="display:inline-flex;flex-direction:column;align-items:center;background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:16px 28px;margin:8px;border-top:3px solid ${esc(col)}">
+          <span style="font-size:2.2rem;font-weight:900;color:${esc(col)};line-height:1;font-variant-numeric:tabular-nums" data-count-to="${esc(b.val)}" data-prefix="${esc(b.prefix)}" data-suffix="${esc(b.suffix)}">${esc(b.prefix)}${esc(b.val)}${esc(b.suffix)}</span>
+          ${b.label ? `<span style="font-size:12px;color:var(--muted);margin-top:6px;font-weight:600;text-align:center">${esc(b.label)}</span>` : ''}
+        </div>`;
+        break;
+      }
+      case 'cycle': {
+        const steps = b.steps||[];
+        if (!steps.length) break;
+        const acc = b.accent||'#60a5fa';
+        html += `<div style="display:flex;align-items:center;flex-wrap:wrap;gap:0;margin:16px 0;justify-content:center">`;
+        steps.forEach((step, i) => {
+          html += `<div style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:80px;max-width:120px;text-align:center">
+            <div style="width:48px;height:48px;border-radius:50%;background:${esc(acc)};color:#fff;font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 12px ${esc(acc)}66">${i+1}</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.4;font-weight:600">${esc(step)}</div>
+          </div>`;
+          if (i < steps.length - 1) {
+            html += `<div style="font-size:18px;color:${esc(acc)};opacity:.6;margin:0 4px;padding-bottom:22px;flex-shrink:0">→</div>`;
+          } else if (steps.length > 2) {
+            html += `<div style="font-size:18px;color:${esc(acc)};opacity:.6;margin:0 4px;padding-bottom:22px;flex-shrink:0">↩</div>`;
+          }
+        });
+        html += `</div>`;
+        break;
+      }
+      case 'mockup': {
+        const device = b.device||'laptop';
+        const imgUrl = b.img ? esc(b.img) : '';
+        const imgEl = imgUrl ? `<img src="${imgUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block"/>` : `<div style="width:100%;height:100%;background:var(--bg3);border-radius:inherit;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px">화면 미리보기</div>`;
+        if (device === 'mobile') {
+          html += `<div style="display:flex;flex-direction:column;align-items:center;margin:16px 0">
+            ${b.title ? `<div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:600">${esc(b.title)}</div>` : ''}
+            <div style="width:140px;background:#1a1a2e;border-radius:28px;padding:10px 6px;box-shadow:0 0 0 2px #2a2a3e,0 8px 32px rgba(0,0,0,.5)">
+              <div style="background:#111;border-radius:4px;width:40px;height:4px;margin:0 auto 6px"></div>
+              <div style="border-radius:16px;overflow:hidden;height:240px">${imgEl}</div>
+              <div style="background:#111;border-radius:50%;width:24px;height:24px;margin:6px auto 0"></div>
+            </div>
+          </div>`;
+        } else if (device === 'tablet') {
+          html += `<div style="display:flex;flex-direction:column;align-items:center;margin:16px 0">
+            ${b.title ? `<div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:600">${esc(b.title)}</div>` : ''}
+            <div style="width:240px;background:#1a1a2e;border-radius:18px;padding:12px 8px;box-shadow:0 0 0 2px #2a2a3e,0 8px 32px rgba(0,0,0,.5)">
+              <div style="border-radius:10px;overflow:hidden;height:180px">${imgEl}</div>
+              <div style="background:#111;border-radius:50%;width:20px;height:20px;margin:8px auto 0"></div>
+            </div>
+          </div>`;
+        } else {
+          html += `<div style="display:flex;flex-direction:column;align-items:center;margin:16px 0">
+            ${b.title ? `<div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:600">${esc(b.title)}</div>` : ''}
+            <div style="max-width:480px;width:100%">
+              <div style="background:#1e1e2e;border-radius:10px 10px 0 0;padding:8px 10px;display:flex;gap:5px;align-items:center;box-shadow:0 0 0 1px #2a2a3e">
+                <div style="width:8px;height:8px;border-radius:50%;background:#ef4444"></div>
+                <div style="width:8px;height:8px;border-radius:50%;background:#fbbf24"></div>
+                <div style="width:8px;height:8px;border-radius:50%;background:#4ade80"></div>
+                <div style="flex:1;background:#111;border-radius:4px;height:12px;margin-left:6px"></div>
+              </div>
+              <div style="border:1px solid #2a2a3e;border-top:none;border-radius:0 0 6px 6px;overflow:hidden;height:220px">${imgEl}</div>
+              <div style="background:#1e1e2e;height:10px;border-radius:0 0 4px 4px;margin:0 16px;border:1px solid #2a2a3e;border-top:none"></div>
+              <div style="background:#2a2a3e;height:6px;border-radius:0 0 8px 8px;margin:0 32px;"></div>
+            </div>
+          </div>`;
+        }
+        break;
+      }
       case 'freecanvas': {
         // On mobile (<600px), stack boxes vertically instead of absolute 16:9
         html += `<div class="freecanvas-wrap" style="position:relative;width:100%;padding-top:56.25%;margin:8px 0;overflow:hidden">
@@ -9051,6 +9188,27 @@ function renderFlowEdges(wrap) {
 function renderInteractive(el) {
   el.querySelectorAll('.flashdeck').forEach(fd => fdInit(fd.dataset.fdid));
   el.querySelectorAll('.flowgraph-wrap').forEach(fw => { setTimeout(()=>renderFlowEdges(fw), 80); });
+  initStatCounters(el);
+}
+function initStatCounters(el) {
+  if (!el) return;
+  el.querySelectorAll('[data-count-to]').forEach(span => {
+    const raw = String(span.dataset.countTo||'');
+    const end = parseFloat(raw.replace(/[^0-9.]/g,''))||0;
+    const pre = span.dataset.prefix||'';
+    const suf = span.dataset.suffix||'';
+    const dec = raw.includes('.') ? raw.split('.')[1].length : 0;
+    const dur = 1400;
+    const startTime = performance.now();
+    const step = t => {
+      const p = Math.min((t - startTime) / dur, 1);
+      const ease = 1 - Math.pow(1 - p, 3);
+      const cur = ease * end;
+      span.textContent = pre + (dec ? cur.toFixed(dec) : Math.round(cur).toLocaleString('ko-KR')) + suf;
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  });
 }
 
 const CHART_PALETTE = ['#60a5fa','#4ade80','#f472b6','#facc15','#fb923c','#a78bfa','#34d399','#f87171','#38bdf8','#e879f9'];

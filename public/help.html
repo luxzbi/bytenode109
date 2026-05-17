@@ -148,6 +148,7 @@ body.dark .demo-badge{background:#2a2d5e;color:#a5b4fc}
       <li><a href="#ppt-inline" style="color:#f472b6">인라인 색상</a></li>
       <li><a href="#ppt-canvas" style="color:#f472b6">자유 배치</a></li>
       <li><a href="#ppt-table" style="color:#f472b6">고급 표 (xtable)</a></li>
+      <li><a href="#ppt-effects" style="color:#f472b6">고급 시각 효과</a></li>
       <li class="section-title" style="color:#34d399">bytenode-flashreport</li>
       <li><a href="#report-tags" style="color:#34d399">보고서 태그</a></li>
       <li class="section-title" style="color:#facc15">bytenode-flashresume</li>
@@ -630,6 +631,37 @@ $$\ce{6CO2 + 6H2O -> C6H12O6 + 6O2}$$
     <div class="example">
       <div class="example-label">예시</div>
       <div class="example-body">&lt;xtable: 구분|수치|상태 // GPU 서버|+320%|급성장::#4ade80 // DRAM|+185%|호조::#60a5fa // NAND|-12%|조정::#f87171 | head:#1e40af | stripe:#0f172a&gt;</div>
+    </div>
+
+    <!-- ═══ ppt 고급 시각 효과 ═══ -->
+    <h2 id="ppt-effects" style="color:#f472b6;border-bottom:2px solid #f472b6;padding-bottom:6px">bytenode-flashppt — 고급 시각 효과</h2>
+    <p>Gemini Research 기반으로 추가된 Beautiful.ai · Canva · Tome 스타일 효과 태그입니다.</p>
+    <table>
+      <tr><th>명령</th><th>설명</th></tr>
+      <tr><td><code>&lt;glasspanel: 텍스트 | blur | opacity | #border&gt;</code></td><td>글래스모피즘 frosted-glass 패널. 어두운 배경에서 유리 질감 효과</td></tr>
+      <tr><td><code>&lt;hollow: #색 | 굵기 | 텍스트 | 크기&gt;</code></td><td>중공 아웃라인 텍스트 — 내부 투명 + 테두리 색상만 표시. 크기 1~9</td></tr>
+      <tr><td><code>&lt;statcount: 값 | 라벨 | #색 | prefix | suffix&gt;</code></td><td>KPI 카드. 콘텐츠 로드 시 0→목표값 카운트업 애니메이션</td></tr>
+      <tr><td><code>&lt;cycle: 단계1 | 단계2 | ... | accent:#색&gt;</code></td><td>순환 프로세스 다이어그램. 번호 원 + 화살표 + 순환(↩). 3~6단계 권장</td></tr>
+      <tr><td><code>&lt;mockup: laptop/mobile/tablet | 이미지URL | 제목&gt;</code></td><td>CSS 디바이스 프레임 목업. 앱/웹 스크린샷을 실제 기기에 합성</td></tr>
+    </table>
+    <div class="example">
+      <div class="example-label">glasspanel 예시</div>
+      <div class="example-body">&lt;glasspanel: 이 기술은 업계 표준을 재정의합니다. | 16px | 0.1 | rgba(255,255,255,.2)&gt;</div>
+    </div>
+    <div class="example">
+      <div class="example-label">hollow + statcount 예시</div>
+      <div class="example-body">&lt;hollow: #38bdf8 | 3px | FUTURE | 9&gt;
+&lt;statcount: 4200 | AI 서비스 사용자 | #60a5fa | | 만&gt;
+&lt;statcount: 98.7 | 고객 만족도 | #4ade80 | | %&gt;</div>
+    </div>
+    <div class="example">
+      <div class="example-label">cycle 예시</div>
+      <div class="example-body">&lt;cycle: 기획 | 설계 | 개발 | 테스트 | 배포 | 피드백 | accent:#38bdf8&gt;</div>
+    </div>
+    <div class="example">
+      <div class="example-label">mockup 예시</div>
+      <div class="example-body">&lt;mockup: laptop | /uploads/dashboard.png | 대시보드 미리보기&gt;
+&lt;mockup: mobile | /uploads/app.png | 앱 화면&gt;</div>
     </div>
 
     <!-- ═══ flashreport ═══ -->
