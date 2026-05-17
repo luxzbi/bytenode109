@@ -636,14 +636,6 @@ function showWriteModal() {
     { id:'byteexam',         emoji:'📋', name:'byteexam 1s',               desc:'AI 프롬포트로 기출문제 생성', accent:true },
     { id:'flashinfo',        emoji:'📊', name:'bytegraphic 1e',            desc:'인포그래픽·데이터 시각화' },
     { id:'flashppt',         emoji:'🎞️', name:'bytenode-ppt 1e',           desc:'프레젠테이션 슬라이드' },
-    { id:'flashreport',      emoji:'📄', name:'bytereport 1e',             desc:'리포트·보고서 (A4)' },
-    { id:'flashresume',      emoji:'💼', name:'resume portfolio 1e',   desc:'이력서·포트폴리오 (A4)' },
-    { id:'flashnewsletter',  emoji:'📰', name:'bytenode-newsNmag 1e',      desc:'뉴스레터·매거진 (A4)' },
-    { id:'flashstory',       emoji:'📱', name:'bytenode-SNS 1e',           desc:'SNS 스토리 (9:16)' },
-    { id:'byteflash',        emoji:'🃏', name:'byteflash 1e',              desc:'플래시카드 학습' },
-    { id:'bytestep',         emoji:'🪜', name:'bytestep 1e',               desc:'단계별 가이드' },
-    { id:'byteflow',         emoji:'🔀', name:'byte in network flow 1e',   desc:'흐름도·관계도' },
-    { id:'byteroadmap',      emoji:'🗺️', name:'byte from timeline 1e',        desc:'타임라인·로드맵' },
   ];
 
   const overlay = document.createElement('div');
@@ -939,14 +931,6 @@ explain=풀이 단계 + 오답 선지별 오류 원인
   { tier:'1e', codeName:'byteexam 1e',               date:'2026-05-08', note:'AI 프롬포트로 기출문제 생성', getContent:()=>`당신은 전문 시험지 출제 전문가입니다. 아래 지시에 따라 실제 시험지와 동일한 형식의 byteexam 코드를 생성해주세요.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n【시험 정보】\n- 시험 범위: (입력하세요)\n- 난이도: 중\n- 문항 수: 총 20문항\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n【byteexam 코드 형식】\n코드 블록 없이 아래 형식으로만 출력하세요.\n\n---BYTEEXAM-START---\n[HEADER]\ntitle=시험지 제목\nsubject=과목\ndifficulty=중\ndate=YYYY-MM-DD\ntotal=20\n\n[QUESTION]\nnum=1\ntype=5choice\ntext=문제 내용 (수식: $인라인$ 또는 $$블록$$)\nchoice1=① 선택지1\nchoice2=② 선택지2\nchoice3=③ 선택지3\nchoice4=④ 선택지4\nchoice5=⑤ 선택지5\nanswer=3\npoint=3\nexplain=해설 내용\n---BYTEEXAM-END---\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n【출제 지침】\n1. 총 20문항 구성 (1~10번 왼쪽, 11~20번 오른쪽 — 2단 레이아웃)\n2. 수식은 반드시 LaTeX: 인라인 $수식$, 블록 $$수식$$\n3. 오지선다: ①②③④⑤ 형식\n4. 보기(ㄱㄴㄷ): type=5choice_with_bogi 사용\n5. 단답/빈칸: type=short, 서술형: type=essay\n6. 배점: 3점·4점 혼합 총 100점\n7. 각 문제에 해설(explain=) 필수 포함\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n(더 정확한 프롬프트는 byteexam 앱의 프롬프트 생성기를 사용하세요.)` },
   { tier:'1e', codeName:'bytegraphic 1e',            date:'2026-05-08', note:'인포그래픽·데이터 시각화', getContent:()=>FLASHINFO_PROMPT },
   { tier:'1e', codeName:'bytenode-ppt 1e',           date:'2026-05-08', note:'프레젠테이션 슬라이드', getContent:()=>FLASHPPT_PROMPT },
-  { tier:'1e', codeName:'bytereport 1e',             date:'2026-05-08', note:'리포트·보고서 (A4)', getContent:()=>FLASHREPORT_PROMPT },
-  { tier:'1e', codeName:'resume portfolio 1e',       date:'2026-05-08', note:'이력서·포트폴리오 (A4)', getContent:()=>FLASHRESUME_PROMPT },
-  { tier:'1e', codeName:'bytenode-newsNmag 1e',      date:'2026-05-08', note:'뉴스레터·매거진 (A4)', getContent:()=>FLASHNEWSLETTER_PROMPT },
-  { tier:'1e', codeName:'bytenode-SNS 1e',           date:'2026-05-08', note:'SNS 스토리 (9:16)', getContent:()=>FLASHSTORY_PROMPT },
-  { tier:'1e', codeName:'byteflash 1e',              date:'2026-05-08', note:'플래시카드 학습', getContent:()=>BYTEFLASH_PROMPT },
-  { tier:'1e', codeName:'bytestep 1e',               date:'2026-05-08', note:'단계별 가이드', getContent:()=>BYTESTEP_PROMPT },
-  { tier:'1e', codeName:'byte in network flow 1e',   date:'2026-05-08', note:'흐름도·관계도', getContent:()=>BYTEFLOW_PROMPT },
-  { tier:'1e', codeName:'byte from timeline 1e',     date:'2026-05-08', note:'타임라인·로드맵', getContent:()=>BYTEROADMAP_PROMPT },
 ];
 
 /* ── byteexam 1s 프롬프트 생성기 (byteexam과 동일 로직) ── */
