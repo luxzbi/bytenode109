@@ -144,6 +144,10 @@ body.dark .demo-badge{background:#2a2d5e;color:#a5b4fc}
       <li><a href="#fi-ratio">출력 비율</a></li>
       <li class="section-title" style="color:#f472b6">bytenode-flashppt</li>
       <li><a href="#ppt-tags" style="color:#f472b6">슬라이드 태그</a></li>
+      <li><a href="#ppt-layout" style="color:#f472b6">고급 레이아웃</a></li>
+      <li><a href="#ppt-inline" style="color:#f472b6">인라인 색상</a></li>
+      <li><a href="#ppt-canvas" style="color:#f472b6">자유 배치</a></li>
+      <li><a href="#ppt-table" style="color:#f472b6">고급 표 (xtable)</a></li>
       <li class="section-title" style="color:#34d399">bytenode-flashreport</li>
       <li><a href="#report-tags" style="color:#34d399">보고서 태그</a></li>
       <li class="section-title" style="color:#facc15">bytenode-flashresume</li>
@@ -516,19 +520,116 @@ $$\ce{6CO2 + 6H2O -> C6H12O6 + 6O2}$$
     <p>16:9 프레젠테이션 형식. <code>&lt;slide:&gt;</code>로 슬라이드를 구분합니다. flashinfo의 모든 차트·레이아웃 태그도 그대로 사용 가능합니다.</p>
     <table>
       <tr><th>명령</th><th>설명</th></tr>
-      <tr><td><code>&lt;slidecover: 제목 | 부제목 | 색&gt;</code></td><td>표지 슬라이드 (전체 배경색)</td></tr>
-      <tr><td><code>&lt;slide: 제목&gt;</code></td><td>새 슬라이드 (자동 번호)</td></tr>
+      <tr><td><code>&lt;slidecover: 제목 | 부제목 | 색&gt;</code></td><td>표지 슬라이드. 색 위치에 <code>gradient|#색1|#색2</code> 지정 가능</td></tr>
+      <tr><td><code>&lt;slide: 제목&gt;</code></td><td>새 슬라이드 시작</td></tr>
       <tr><td><code>&lt;slide: 제목 | 부제목&gt;</code></td><td>부제목 포함 슬라이드</td></tr>
+      <tr><td><code>&lt;slide: 제목 | bg:#색&gt;</code></td><td>배경색 지정 슬라이드</td></tr>
+      <tr><td><code>&lt;slidebg: 배경스펙&gt;</code></td><td>슬라이드 배경 — <code>#색</code> / <code>gradient|#c1|#c2</code> / <code>dots|색|bg</code> / <code>grid</code> / <code>stripe</code> / <code>circuit</code> / <code>waves</code> / <code>mesh|c1|c2|c3</code> / <code>noise|#색</code></td></tr>
       <tr><td><code>&lt;slidenote: 메모&gt;</code></td><td>발표자 노트 (작은 글씨)</td></tr>
+      <tr><td><code>&lt;meshbg: 색1 | 색2 | 색3 | 색4&gt;</code></td><td>메시 그라데이션 배경 레이어</td></tr>
     </table>
     <div class="example">
       <div class="example-label">예시</div>
-      <div class="example-body">&lt;slidecover: AI가 바꾸는 미래 | 2025 기술 트렌드 | #1e3a5f&gt;
+      <div class="example-body">&lt;slidecover: AI가 바꾸는 미래 | 2025 기술 트렌드 | gradient|#0f172a|#7c3aed&gt;
 &lt;slide: 핵심 수치&gt;
+&lt;slidebg: circuit|rgba(96,165,250,.2)|#0a0f1e&gt;
 &lt;stat: 4,200만 | AI 서비스 사용자 | #60a5fa&gt;
+&lt;stat: +127% | 전년 대비 성장률 | #4ade80&gt;
 &lt;slide: 시장 점유율 | 2024년 기준&gt;
 &lt;piechart: ChatGPT:42 | Gemini:28 | Claude:18 | 기타:12 title:AI 점유율&gt;
 &lt;slidenote: 출처: 글로벌 AI 리포트 2024&gt;</div>
+    </div>
+
+    <!-- ═══ ppt 고급 레이아웃 ═══ -->
+    <h2 id="ppt-layout" style="color:#f472b6;border-bottom:2px solid #f472b6;padding-bottom:6px">bytenode-flashppt — 고급 레이아웃</h2>
+    <p>Canva 스타일의 구성 요소. 슬라이드 안에서 정보를 시각적으로 구조화합니다.</p>
+    <table>
+      <tr><th>명령</th><th>설명</th></tr>
+      <tr><td><code>&lt;columns3: 내용1 | 내용2 | 내용3&gt;</code></td><td>3등분 가로 컬럼 레이아웃</td></tr>
+      <tr><td><code>&lt;grid2x2: 제목1:설명1 | 제목2:설명2 | 제목3:설명3 | 제목4:설명4 | accent:#색&gt;</code></td><td>2×2 정보 그리드. <code>accent</code>로 강조색 지정</td></tr>
+      <tr><td><code>&lt;textglow: #색1,#색2 | 텍스트 | 크기&gt;</code></td><td>빛번짐 글로우 그라데이션 텍스트. 크기 1~9</td></tr>
+      <tr><td><code>&lt;annotate: 텍스트 | #색&gt;</code></td><td>포스트잇 스타일 어노테이션 메모 박스</td></tr>
+      <tr><td><code>&lt;comparison: A라벨 | B라벨 // 항목 | A값 | B값 // ...&gt;</code></td><td>A vs B 나란히 비교 테이블. <code>//</code>로 행 구분</td></tr>
+      <tr><td><code>&lt;accent: #색 | 텍스트&gt;</code></td><td>왼쪽 컬러 바 강조 인용 박스</td></tr>
+      <tr><td><code>&lt;magazine: 이미지URL | 제목 | 내용 | left/right&gt;</code></td><td>이미지 + 텍스트 에디토리얼 레이아웃</td></tr>
+    </table>
+    <div class="example">
+      <div class="example-label">columns3 예시</div>
+      <div class="example-body">&lt;columns3: 🔥 빠른 처리 속도 / 0.3초 응답 | ⚡ 저전력 설계 / 기존 대비 60% 절감 | 🧠 AI 최적화 / 온디바이스 추론&gt;</div>
+    </div>
+    <div class="example">
+      <div class="example-label">grid2x2 예시</div>
+      <div class="example-body">&lt;grid2x2: 속도:0.3초 응답 | 정확도:98.7% | 비용:월 $9 | 지원:24시간 | accent:#38bdf8&gt;</div>
+    </div>
+    <div class="example">
+      <div class="example-label">comparison 예시</div>
+      <div class="example-body">&lt;comparison: 기존 방식 | 신기술 // 처리속도 | 3.2초 | 0.3초 // 정확도 | 82% | 98% // 비용 | 높음 | 낮음&gt;</div>
+    </div>
+    <div class="example">
+      <div class="example-label">magazine 예시</div>
+      <div class="example-body">&lt;magazine: /uploads/ai.jpg | AI 혁신의 중심 | 생성형 AI는 기업 생산성을 크게 향상시키고 있습니다. | left&gt;</div>
+    </div>
+
+    <!-- ═══ ppt 인라인 색상 ═══ -->
+    <h2 id="ppt-inline" style="color:#f472b6;border-bottom:2px solid #f472b6;padding-bottom:6px">bytenode-flashppt — 인라인 색상 · 그라데이션</h2>
+    <p>텍스트 태그 내부에서 단어·구절 단위로 색을 지정합니다.</p>
+    <table>
+      <tr><th>명령</th><th>설명</th></tr>
+      <tr><td><code>&lt;c: #색 | 텍스트&gt;</code></td><td>단색 인라인 스팬</td></tr>
+      <tr><td><code>&lt;gc: #색1,#색2 | 텍스트&gt;</code></td><td>단어·구절 그라데이션</td></tr>
+      <tr><td><code>&lt;colortext: #f00:단어 | 일반 | #0af:다른단어&gt;</code></td><td>여러 색 단어를 한 줄에 나열</td></tr>
+      <tr><td><code>&lt;gradtext: 색1 | 색2 | 텍스트 | 크기&gt;</code></td><td>큰 그라데이션 제목 텍스트</td></tr>
+      <tr><td><code>&lt;gradbox: 색1 | 색2 | 텍스트 | dark/light&gt;</code></td><td>그라데이션 배경 강조 박스</td></tr>
+      <tr><td><code>&lt;gradshape: 모양 | 색1 | 색2 | 너비 | 높이 | 텍스트 | dark/light&gt;</code></td><td>모양: <code>rect</code> / <code>pill</code> / <code>circle</code> / <code>diamond</code></td></tr>
+    </table>
+    <div class="example">
+      <div class="example-label">예시</div>
+      <div class="example-body">&lt;bt: &lt;c: #38bdf8 | AI&gt;는 &lt;gc: #f59e0b,#ef4444 | 세상을 바꾼다&gt;&gt;
+&lt;textglow: #38bdf8,#a78bfa | AI가 바꾸는 세상 | 8&gt;
+&lt;gradtext: #38bdf8 | #a78bfa | 핵심 개념 한눈에 보기 | 8&gt;
+&lt;gradbox: #2563eb | #7c3aed | 오늘의 핵심 질문 | dark&gt;</div>
+    </div>
+
+    <!-- ═══ ppt 자유 배치 ═══ -->
+    <h2 id="ppt-canvas" style="color:#f472b6;border-bottom:2px solid #f472b6;padding-bottom:6px">bytenode-flashppt — 자유 배치 캔버스</h2>
+    <p>100×100 좌표계에서 요소를 절대 위치로 배치합니다. Canva처럼 원하는 위치에 자유롭게 놓을 수 있습니다.</p>
+    <table>
+      <tr><th>명령</th><th>설명</th></tr>
+      <tr><td><code>&lt;freebox: x, y, w, h, z&gt;</code></td><td>자유 배치 박스 시작. x/y/w/h는 0~100 비율, z는 레이어</td></tr>
+      <tr><td><code>&lt;endbox&gt;</code></td><td>freebox 닫기</td></tr>
+      <tr><td><code>&lt;bgblock: #색&gt;</code></td><td>freebox 첫 번째 태그로 사용 시 → 박스 배경색</td></tr>
+      <tr><td><code>&lt;bgblock: #색1,#색2&gt;</code></td><td>그라데이션 배경</td></tr>
+      <tr><td><code>&lt;bgsplit: v | 비율% | #색1 | #색2&gt;</code></td><td>좌우 2분할 배경 (h = 상하 분할)</td></tr>
+      <tr><td><code>&lt;partition: 구성 | 간격&gt; ... &lt;endgrid&gt;</code></td><td>구조적 분할: <code>50-50</code> / <code>30-70</code> / <code>33-33-33</code> / <code>2x2</code></td></tr>
+    </table>
+    <div class="note">freebox 안 첫 태그가 <code>bgblock</code> 또는 <code>bgsplit</code>이면 그 박스의 배경으로 적용됩니다 — Canva 색 분할과 동일한 효과.</div>
+    <div class="example">
+      <div class="example-label">좌우 분할 배경 예시</div>
+      <div class="example-body">&lt;freebox: 0,0,45,100,0&gt;
+&lt;bgblock: #1e3a8a,#0f172a&gt;
+&lt;endbox&gt;
+&lt;freebox: 55,0,45,100,0&gt;
+&lt;bgblock: #111827&gt;
+&lt;endbox&gt;
+&lt;freebox: 2,5,42,90,1&gt;
+&lt;gradtext: #60a5fa | #a78bfa | 왼쪽 제목 | 8&gt;
+&lt;endbox&gt;
+&lt;freebox: 55,10,40,80,1&gt;
+&lt;bt: 오른쪽 본문 내용&gt;
+&lt;endbox&gt;</div>
+    </div>
+
+    <!-- ═══ ppt xtable ═══ -->
+    <h2 id="ppt-table" style="color:#f472b6;border-bottom:2px solid #f472b6;padding-bottom:6px">bytenode-flashppt — 고급 표 (xtable)</h2>
+    <p>헤더 색상, 줄무늬, 셀 색상을 지정할 수 있는 스타일드 테이블입니다.</p>
+    <table>
+      <tr><th>명령</th><th>설명</th></tr>
+      <tr><td><code>&lt;xtable: H1|H2 // R1|R2 // R2|R3 | head:#색 | stripe:#색 | border:#색&gt;</code></td><td><code>//</code>로 행 구분, <code>|</code>로 열 구분</td></tr>
+    </table>
+    <p>셀 글자 색: 셀 값 뒤에 <code>::#색</code> 추가 (예: <code>+200%::#4ade80</code>)</p>
+    <div class="example">
+      <div class="example-label">예시</div>
+      <div class="example-body">&lt;xtable: 구분|수치|상태 // GPU 서버|+320%|급성장::#4ade80 // DRAM|+185%|호조::#60a5fa // NAND|-12%|조정::#f87171 | head:#1e40af | stripe:#0f172a&gt;</div>
     </div>
 
     <!-- ═══ flashreport ═══ -->

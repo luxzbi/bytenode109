@@ -3808,12 +3808,12 @@ function renderFlashGuide(app) {
       emoji: '🎞️',
       tag: '프레젠테이션',
       tagColor: '#9d174d',
-      desc: '16:9 슬라이드 발표자료 형식입니다. &lt;slide:&gt; 태그로 페이지를 나누고, 각 슬라이드에 차트·통계·단계 흐름도를 자유롭게 배치합니다. 발표자 노트도 추가할 수 있습니다.',
+      desc: '16:9 슬라이드 발표자료 형식입니다. &lt;slide:&gt; 태그로 페이지를 나누고, 각 슬라이드에 차트·통계·3컬럼·2×2그리드·비교표·매거진 레이아웃, 자유 배치 캔버스(freebox), 인라인 색상·그라데이션, 글로우 텍스트, 포스트잇 어노테이션 등 Canva 수준의 디자인 요소를 적용할 수 있습니다.',
       usecases: ['수업 발표자료', '업무 보고서 PPT', '제품 소개 슬라이드', '세미나 자료'],
       steps: [
         '글쓰기 → 모드를 <b>bytenode-ppt 1e</b> 선택 (비율 자동 16:9)',
         '<b>AI 프롬프트 복사</b> 클릭',
-        'AI에 붙여넣고 발표 주제 지정 (예: "AI 기술 트렌드 5페이지 발표자료")',
+        'AI가 "어떤 주제로 PPT를 만들까요?" 라고 물으면 주제와 내용을 알려주세요',
         '생성된 코드 복사 → 에디터 붙여넣기',
         'PDF 다운로드 시 16:9 슬라이드 크기로 출력',
       ],
@@ -4551,6 +4551,36 @@ Canva형 분할 배경 예시 (freebox와 조합):
 <freebox: 55,10,40,80,1>
 <bt: 오른쪽 텍스트>
 <endbox>
+
+【🗂 고급 레이아웃 태그 — Canva 스타일 구성】
+
+<columns3: 내용1 | 내용2 | 내용3>
+→ 3등분 가로 컬럼. 각 셀에 텍스트·통계·요점을 나란히 배치. 비교·특징 나열에 적합.
+예: <columns3: 🔥 빠른 처리 속도 | ⚡ 저전력 설계 | 🧠 AI 최적화>
+
+<grid2x2: 제목1:내용1 | 제목2:내용2 | 제목3:내용3 | 제목4:내용4 | accent:#색>
+→ 2×2 4칸 정보 그리드. 각 셀에 제목:설명 형식. accent는 상단 강조색.
+예: <grid2x2: 속도:0.3초 응답 | 정확도:98.7% | 비용:월 $9 | 지원:24시간 | accent:#38bdf8>
+
+<textglow: #색1,#색2 | 텍스트 | 크기>
+→ 글로우(빛번짐) 효과 그라데이션 텍스트. 임팩트 있는 키워드·슬로건에 사용. 크기 1~9 (기본 7).
+예: <textglow: #38bdf8,#a78bfa | AI가 바꾸는 세상 | 8>
+
+<annotate: 텍스트 | #색>
+→ 포스트잇 스타일 어노테이션 박스. 보충 설명·주의사항·메모에 사용.
+예: <annotate: 이 수치는 2024년 4분기 기준입니다. | #fbbf24>
+
+<comparison: A라벨 | B라벨 // 항목1 | A값1 | B값1 // 항목2 | A값2 | B값2>
+→ A vs B 나란히 비교 테이블. // 로 행을 구분. 제품 비교, 장단점 대비에 적합.
+예: <comparison: 기존 방식 | 신기술 // 처리속도 | 3.2초 | 0.3초 // 정확도 | 82% | 98% // 비용 | 높음 | 낮음>
+
+<accent: #색 | 텍스트>
+→ 왼쪽 컬러 바 강조 인용 박스. 핵심 문장·인용구·포인트 강조에 사용.
+예: <accent: #38bdf8 | 2025년 AI 시장 규모는 전년 대비 127% 성장했습니다.>
+
+<magazine: 이미지URL | 제목 | 내용 | left/right>
+→ 이미지 + 텍스트 에디토리얼 레이아웃. left/right로 이미지 위치 지정 (기본 left).
+예: <magazine: /uploads/ai.jpg | AI 혁신의 중심 | 생성형 AI는 기업 생산성을 크게 향상시키고 있습니다. | left>
 
 【🏆 AI 디자인 팁 — 자율 편집 시 반드시 참고】
 1. 색 대비 법칙: 어두운 배경(#0f172a 계열)에는 밝은 텍스트(#e2e8f0, #60a5fa), 밝은 배경에는 어두운 텍스트.
@@ -7457,6 +7487,57 @@ function parseCmd(cmd) {
     return { type:'xtable', rows, headColor: headMatch?.[1]||null, stripeColor: stripeMatch?.[1]||null, borderColor: borderMatch?.[1]||'rgba(255,255,255,.15)' };
   }
 
+  // ── 3단 컬럼 <columns3: 내용1 | 내용2 | 내용3> ──
+  if (/^columns3:\s*/.test(cmd)) {
+    const cols = cmd.slice(cmd.indexOf(':')+1).split('|').map(s=>s.trim()).slice(0,3);
+    while (cols.length < 3) cols.push('');
+    return { type:'columns3', cols };
+  }
+  // ── 2×2 정보 그리드 <grid2x2: 제목1:내용1 | 제목2:내용2 | 제목3:내용3 | 제목4:내용4 | accent:#색> ──
+  if (/^grid2x2:\s*/.test(cmd)) {
+    const raw = cmd.slice(cmd.indexOf(':')+1);
+    const accentMatch = raw.match(/\|\s*accent:(#[0-9a-fA-F]{3,8})/i);
+    const clean = raw.replace(/\|\s*accent:#[0-9a-fA-F]{3,8}/gi,'');
+    const cells = clean.split('|').map(s=>s.trim()).slice(0,4).map(s=>{
+      const ci = s.indexOf(':');
+      return ci > -1 ? { title: s.slice(0,ci).trim(), body: s.slice(ci+1).trim() } : { title:'', body:s };
+    });
+    while (cells.length < 4) cells.push({ title:'', body:'' });
+    return { type:'grid2x2', cells, accent: accentMatch?.[1]||'#60a5fa' };
+  }
+  // ── 글로우 그라데이션 텍스트 <textglow: #색1,#색2 | 텍스트 | 크기> ──
+  if (/^textglow:\s*/.test(cmd)) {
+    const p = cmd.slice(cmd.indexOf(':')+1).split('|').map(s=>s.trim());
+    const colors = (p[0]||'#38bdf8,#a78bfa').split(',').map(s=>s.trim());
+    return { type:'textglow', c1: colors[0]||'#38bdf8', c2: colors[1]||'#a78bfa', text: p[1]||'', size: parseInt(p[2]||'7')||7 };
+  }
+  // ── 어노테이션 박스 <annotate: 텍스트 | #색> ──
+  if (/^annotate:\s*/.test(cmd)) {
+    const p = cmd.slice(cmd.indexOf(':')+1).split('|').map(s=>s.trim());
+    return { type:'annotate', text: p[0]||'', color: p[1]||'#fbbf24' };
+  }
+  // ── A vs B 비교 <comparison: A라벨 | B라벨 // 항목 | A값 | B값> ──
+  if (/^comparison:\s*/.test(cmd)) {
+    const raw = cmd.slice(cmd.indexOf(':')+1);
+    const rows = raw.split('//').map(r=>r.split('|').map(c=>c.trim()));
+    const [headerRow, ...dataRows] = rows;
+    const labelA = headerRow[0]||'A', labelB = headerRow[1]||'B';
+    const items = dataRows.filter(r=>r.length>=3).map(r=>({ label:r[0], a:r[1], b:r[2] }));
+    return { type:'comparison', labelA, labelB, items };
+  }
+  // ── 강조 인용 박스 <accent: #색 | 텍스트> ──
+  if (/^accent:\s*/.test(cmd)) {
+    const p = cmd.slice(cmd.indexOf(':')+1).split('|').map(s=>s.trim());
+    const color = /^#[0-9a-fA-F]{3,8}$/.test(p[0]||'') ? p[0] : '#60a5fa';
+    const text = /^#[0-9a-fA-F]{3,8}$/.test(p[0]||'') ? p.slice(1).join('|') : p.join('|');
+    return { type:'accent', color, text };
+  }
+  // ── 매거진 레이아웃 <magazine: 이미지URL | 제목 | 내용 | left/right> ──
+  if (/^magazine:\s*/.test(cmd)) {
+    const p = cmd.slice(cmd.indexOf(':')+1).split('|').map(s=>s.trim());
+    return { type:'magazine', img: p[0]||'', title: p[1]||'', body: p[2]||'', side: (p[3]||'left').toLowerCase() };
+  }
+
   return null; // 알 수 없는 명령어 → 무시
 }
 
@@ -8695,6 +8776,80 @@ function renderBlocks(blocks, _isInner) {
             <thead>${mkTh(head)}</thead>
             <tbody>${body.map((r,i)=>mkTd(r,i)).join('')}</tbody>
           </table></div>`;
+        break;
+      }
+      case 'columns3': {
+        html += `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:12px 0">`;
+        (b.cols||[]).forEach(col => {
+          html += `<div style="background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:14px;font-size:13px;line-height:1.7">${renderInlineContent(col)}</div>`;
+        });
+        html += `</div>`;
+        break;
+      }
+      case 'grid2x2': {
+        const acc = b.accent||'#60a5fa';
+        html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0">`;
+        (b.cells||[]).forEach(cell => {
+          html += `<div style="background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;border-top:3px solid ${esc(acc)}">
+            ${cell.title ? `<div style="font-size:12px;font-weight:700;color:${esc(acc)};margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">${esc(cell.title)}</div>` : ''}
+            <div style="font-size:13px;color:var(--text2);line-height:1.7">${renderInlineContent(cell.body)}</div>
+          </div>`;
+        });
+        html += `</div>`;
+        break;
+      }
+      case 'textglow': {
+        const fsMap = {1:'.75rem',2:'.85rem',3:'1rem',4:'1.15rem',5:'1.35rem',6:'1.6rem',7:'2rem',8:'2.5rem',9:'3.2rem'};
+        const fs = fsMap[Math.min(9,Math.max(1,b.size||7))]||'2rem';
+        const grad = `linear-gradient(135deg,${esc(b.c1)},${esc(b.c2)})`;
+        const glowColor = b.c1;
+        html += `<div style="text-align:center;margin:14px 0;padding:10px 0">
+          <span style="font-size:${fs};font-weight:900;background:${grad};-webkit-background-clip:text;background-clip:text;color:transparent;display:inline-block;filter:drop-shadow(0 0 18px ${esc(glowColor)}88);letter-spacing:-.01em">${esc(b.text)}</span>
+        </div>`;
+        break;
+      }
+      case 'annotate': {
+        const noteColor = b.color||'#fbbf24';
+        const isYellow = noteColor.toLowerCase().includes('fbf') || noteColor.toLowerCase().includes('fd') || noteColor === '#fbbf24';
+        const textColor = isYellow ? '#1a1200' : '#fff';
+        html += `<div style="display:inline-block;background:${esc(noteColor)};color:${textColor};padding:14px 18px;border-radius:4px;font-size:13px;line-height:1.7;max-width:100%;margin:10px 0;box-shadow:3px 4px 0 rgba(0,0,0,.25);transform:rotate(-0.5deg);position:relative">
+          ${renderInlineContent(b.text)}
+        </div>`;
+        break;
+      }
+      case 'comparison': {
+        html += `<div style="margin:14px 0;border-radius:10px;overflow:hidden;border:1px solid var(--border2)">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;background:var(--bg3)">
+            <div style="padding:10px 14px;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border2)">항목</div>
+            <div style="padding:10px 14px;font-size:13px;font-weight:700;color:#60a5fa;text-align:center;border-bottom:1px solid var(--border2)">${esc(b.labelA)}</div>
+            <div style="padding:10px 14px;font-size:13px;font-weight:700;color:#f472b6;text-align:center;border-bottom:1px solid var(--border2)">${esc(b.labelB)}</div>
+          </div>`;
+        (b.items||[]).forEach((item,ri) => {
+          const rowBg = ri%2===0 ? 'var(--bg2)' : 'var(--bg3)';
+          html += `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;background:${rowBg}">
+            <div style="padding:9px 14px;font-size:13px;font-weight:600;color:var(--text);border-top:${ri?'1px solid var(--border2)':'none'}">${esc(item.label)}</div>
+            <div style="padding:9px 14px;font-size:13px;color:#93c5fd;text-align:center;border-top:${ri?'1px solid var(--border2)':'none'}">${renderInlineContent(item.a)}</div>
+            <div style="padding:9px 14px;font-size:13px;color:#f9a8d4;text-align:center;border-top:${ri?'1px solid var(--border2)':'none'}">${renderInlineContent(item.b)}</div>
+          </div>`;
+        });
+        html += `</div>`;
+        break;
+      }
+      case 'accent': {
+        const ac = b.color||'#60a5fa';
+        html += `<div style="border-left:4px solid ${esc(ac)};background:rgba(255,255,255,.04);padding:14px 18px;border-radius:0 8px 8px 0;margin:10px 0;font-size:14px;line-height:1.75;color:var(--text)">${renderInlineContent(b.text)}</div>`;
+        break;
+      }
+      case 'magazine': {
+        const imgSide = b.side === 'right';
+        const imgBlock = b.img ? `<div style="flex:0 0 45%;max-width:45%"><img src="${esc(b.img)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;display:block"/></div>` : '';
+        const txtBlock = `<div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:8px;padding:8px">
+          ${b.title ? `<div style="font-size:1.2rem;font-weight:800;color:var(--text);line-height:1.3">${renderInlineContent(b.title)}</div>` : ''}
+          ${b.body ? `<div style="font-size:13px;color:var(--text2);line-height:1.7">${renderInlineContent(b.body)}</div>` : ''}
+        </div>`;
+        html += `<div style="display:flex;gap:20px;margin:16px 0;align-items:stretch;min-height:160px;flex-wrap:wrap">
+          ${imgSide ? txtBlock + imgBlock : imgBlock + txtBlock}
+        </div>`;
         break;
       }
       case 'freecanvas': {
