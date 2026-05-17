@@ -47,6 +47,330 @@ async function initAdmin() {
 }
 initAdmin().catch(e => console.error('관리자 초기화 실패', e));
 
+/* ── 챗봇 FAQ 기본 데이터 시드 ── */
+async function seedChatbotFaqs() {
+  const snap = await db.collection('chatbot_faqs').limit(1).get();
+  if (!snap.empty) return; // 이미 데이터 있으면 스킵
+
+  const DEFAULT_FAQS = [
+    /* ── bytenode 기본 ── */
+    {
+      question: 'AI가 생성한 코드를 붙여넣었는데 아무것도 안 나와요',
+      answer: 'AI가 코드 블록(```...```) 안에 감싸서 출력했을 가능성이 높아요. 코드 블록 안의 내용만 복사해서 붙여넣어 보세요. 또는 AI에게 "코드 블록 없이 태그만 바로 출력해줘"라고 다시 요청해보세요.',
+      followUps: [
+        { question: '그래도 아무것도 안 나와요', answer: '태그 안에 > 문자가 있으면 파서가 그 위치에서 태그를 닫아버려요. 태그 내용에 꺾쇠(>)가 없는지 확인해보세요. 수식 부등호는 \\gt로 써야 해요.' },
+        { question: 'AI가 마크다운(##, **)으로 글을 써요', answer: '프롬프트를 먼저 붙여넣은 뒤, 그 다음 메시지로 주제를 알려주세요. 또는 AI에게 "bytenode 태그만 사용해서 다시 써줘"라고 요청하면 돼요.' },
+      ]
+    },
+    {
+      question: '태그 안에 꺾쇠(>) 문자를 써야 하는데 이상해져요',
+      answer: 'bytenode 태그는 > 를 태그 닫힘으로 인식해요. 부등호가 필요한 경우 수식에서는 \\gt (크다) / \\lt (작다)를 사용하세요. 일반 텍스트에서는 꺾쇠 대신 다른 표현(예: "이상", "초과")으로 쓰는 게 좋아요.',
+      followUps: [
+        { question: '태그 중첩은 되나요?', answer: '태그 중첩은 지원되지 않아요. <indent: <mark: 내용>> 같은 형식은 동작하지 않아요. 대신 <indent:>와 <mark:>를 각각 따로 줄에 써주세요.' },
+      ]
+    },
+    {
+      question: '링크는 어떻게 넣어요?',
+      answer: '{URL} 링크문구 형식으로 써요. 예: {https://google.com} 구글 바로가기. Markdown의 [텍스트](URL) 형식은 사용하지 않아요.',
+      followUps: [
+        { question: '링크가 새 탭에서 안 열려요', answer: 'bytenode 링크는 기본적으로 새 탭(target=_blank)으로 열려요. 링크 형식이 정확한지 확인해보세요. URL 앞뒤에 공백이 없어야 해요.' },
+      ]
+    },
+    {
+      question: '이미지 업로드는 됐는데 글에서 안 보여요',
+      answer: '업로드만 하면 자동으로 들어가지 않아요. 글 본문에 <img: /uploads/파일명.jpg> 태그를 직접 써야 해요. 업로드 후 나타나는 파일 경로를 복사해서 사용하세요.',
+      followUps: [
+        { question: '이미지 크기를 조절하고 싶어요', answer: '<img: /uploads/파일명.jpg | 600px> 처럼 너비를 두 번째 인자로 넣을 수 있어요. 기본은 100% 너비예요.' },
+        { question: '이미지가 업로드 자체가 안 돼요', answer: '지원 형식은 jpg, png, gif, webp, svg예요. 파일 크기가 너무 크면 업로드가 실패할 수 있어요. 5MB 이하로 줄여서 다시 시도해보세요.' },
+      ]
+    },
+    {
+      question: '여러 이미지를 갤러리처럼 보여주고 싶어요',
+      answer: '<gallery: /uploads/a.jpg /uploads/b.jpg /uploads/c.jpg> 형식으로 쓰면 이미지들이 갤러리 그리드로 표시돼요. 클릭하면 슬라이드쇼로 확대 보기도 돼요.',
+      followUps: [
+        { question: '이미지 순서를 바꾸고 싶어요', answer: 'gallery 태그 안의 파일 경로 순서를 바꾸면 돼요. 왼쪽부터 순서대로 표시됩니다.' },
+        { question: '동영상도 넣을 수 있어요?', answer: '<video: /uploads/파일명.mp4> 태그로 동영상을 넣을 수 있어요. mp4, webm, mov 형식을 지원해요.' },
+      ]
+    },
+    {
+      question: '수학 수식이 안 나와요',
+      answer: '인라인 수식은 $수식$, 블록(독립 줄) 수식은 $$수식$$ 형식으로 써요. 수식 안에 > < 부등호가 있다면 \\gt, \\lt로 바꿔야 해요.',
+      followUps: [
+        { question: '분수, 제곱근 같은 기호는 어떻게 써요?', answer: '분수: $\\frac{분자}{분모}$, 제곱근: $\\sqrt{x}$, 지수: $x^{2}$, 아래첨자: $x_{n}$. LaTeX 문법을 그대로 사용해요.' },
+        { question: 'AI가 수식을 이상하게 써요', answer: 'AI에게 "수식은 반드시 $...$ 또는 $$...$$로 감싸줘"라고 명시해서 요청하면 더 정확하게 출력해줘요. 또는 bytenode 프롬프트를 먼저 복사해서 붙여넣고 요청하세요.' },
+      ]
+    },
+    {
+      question: '화학식은 어떻게 써요?',
+      answer: '$\\ce{화학식}$ 형식으로 써요. 예: $\\ce{H2O}$, $\\ce{CH4 + 2O2 -> CO2 + 2H2O}$. 화살표는 -> 또는 --> 로 쓰면 됩니다.',
+      followUps: [
+        { question: '구조식(SMILES)도 표현할 수 있어요?', answer: 'byteexam에서는 [SMILES:c1ccccc1] 형식으로 구조식을 자동 렌더링할 수 있어요. bytenode 본문에서는 현재 SMILES 직접 렌더링은 지원하지 않아요.' },
+        { question: '이온식, 반응식도 되나요?', answer: '네, $\\ce{Na+ + Cl- -> NaCl}$, $\\ce{2H2 + O2 -> 2H2O}$ 처럼 이온식, 반응식 모두 \\ce{} 안에 그대로 쓰면 돼요.' },
+      ]
+    },
+    {
+      question: '표는 어떻게 만들어요?',
+      answer: '<table: 헤더1|헤더2|헤더3 // 행1값1|행1값2|행1값3 // 행2값1|행2값2|행2값3> 형식으로 써요. // 로 행을 구분하고, | 로 열을 구분해요.',
+      followUps: [
+        { question: '표에 색상을 넣고 싶어요', answer: 'PPT 모드에서는 <xtable: 헤더1|헤더2 // 값1|값2 | head:#1e40af | stripe:#0f172a> 형식의 고급 표를 쓸 수 있어요. head, stripe, border 색상을 각각 지정할 수 있어요.' },
+        { question: '셀 글자 색을 바꾸고 싶어요', answer: 'xtable에서 셀 값 뒤에 ::#색코드 를 추가하면 돼요. 예: +200%::#4ade80 → +200% 글자가 초록색으로 표시돼요.' },
+      ]
+    },
+    {
+      question: '글 수정·삭제는 어떻게 해요?',
+      answer: '내 게시물을 클릭하면 오른쪽 상단에 ✏️ 수정 버튼이 나타나요. 누르면 코드 에디터가 열리고, 수정 후 저장하면 됩니다. 삭제는 수정 화면 하단의 🗑 삭제 버튼을 이용하세요.',
+      followUps: [
+        { question: '수정 버튼이 안 보여요', answer: '본인이 작성한 글에만 수정 버튼이 표시돼요. 로그인 상태인지 확인하고, 다른 사람의 글이면 수정할 수 없어요.' },
+      ]
+    },
+    {
+      question: '글자 크기를 바꾸고 싶어요',
+      answer: '<1t:> ~ <9t:> 태그로 크기를 지정해요. 숫자가 클수록 글자가 커요. 예: <7t: 큰 제목>, <4t: 본문 텍스트>. <xt:> 는 자동 강조 제목이에요.',
+      followUps: [
+        { question: '굵게, 기울임은 어떻게 해요?', answer: '<bt: 텍스트> 는 굵게(bold), <it: 텍스트> 는 기울임(italic), <mark: 텍스트> 는 형광 표시예요.' },
+      ]
+    },
+    /* ── PPT ── */
+    {
+      question: 'PPT 슬라이드가 한 장만 나오고 나머지가 안 보여요',
+      answer: 'AI가 <slide:> 태그 대신 --- 구분선이나 숫자(1., 2.)로 슬라이드를 나눴을 가능성이 높아요. bytenode-ppt에서는 오직 <slide:>와 <slidecover:> 태그만이 슬라이드를 구분해요. 프롬프트를 다시 복사해서 AI에 붙여넣고 재생성하세요.',
+      followUps: [
+        { question: '프롬프트는 어디서 복사해요?', answer: '글쓰기 → bytenode-ppt 1e 모드 선택 → "AI 프롬프트 복사" 버튼을 눌러주세요. 또는 상단 메뉴 "프롬프트"에서도 찾을 수 있어요.' },
+        { question: 'AI가 어떤 주제인지 안 물어보고 바로 슬라이드를 써요', answer: 'AI가 첫 메시지로 주제를 물어보는 게 정상이에요. 만약 바로 만들었다면 프롬프트를 먼저 붙여넣은 뒤 주제를 따로 메시지로 입력해보세요.' },
+      ]
+    },
+    {
+      question: 'PPT에 배경색이나 그라데이션을 넣고 싶어요',
+      answer: '<slide:> 태그 바로 아래에 <slidebg: 배경스펙>을 써요. 단색: <slidebg: #1e3a8a>, 그라데이션: <slidebg: gradient|#0f172a|#7c3aed>, 패턴: <slidebg: circuit|rgba(96,165,250,.2)|#0a0f1e> 등을 사용할 수 있어요.',
+      followUps: [
+        { question: '슬라이드 전체가 아닌 일부만 색칠하고 싶어요', answer: '<freebox: 0,0,45,100,0> 태그 안에 <bgblock: #1e3a8a> 를 첫 번째로 넣으면 그 박스 영역만 색칠돼요. Canva의 분할 배경과 똑같이 만들 수 있어요.' },
+        { question: '메시 그라데이션(빛번짐) 효과는 어떻게 해요?', answer: '<meshbg: #0f172a | #1e3a8a | #581c87 | #020617> 를 슬라이드 안에 쓰면 돼요. slidebg와 함께 쓰면 배경이 더 풍부해져요.' },
+      ]
+    },
+    {
+      question: 'freebox(자유 배치)를 어떻게 사용해요?',
+      answer: '<freebox: x, y, w, h, z> 로 박스를 열고 내용 태그들을 쓴 뒤 <endbox> 로 닫아요. x/y/w/h는 0~100 기준 비율이에요. 예: <freebox: 10, 20, 40, 30, 1> → 왼쪽 10%, 위 20% 위치에 너비 40%, 높이 30% 박스.',
+      followUps: [
+        { question: '박스들이 서로 겹쳐요', answer: 'z 값이 큰 박스가 위에 올라와요. 겹침을 원하지 않는다면 x+w ≤ 95, y+h ≤ 95 를 지키고, 나란히 놓는 박스는 왼쪽 x+w가 오른쪽 x보다 5 이상 작게 설정하세요.' },
+        { question: 'freebox 배경에 색을 넣고 싶어요', answer: 'freebox 안의 첫 번째 태그로 <bgblock: #색코드> 를 쓰면 그 박스의 배경색이 돼요. <bgsplit: v|45%|#색1|#색2> 를 쓰면 좌우 분할 배경도 만들 수 있어요.' },
+      ]
+    },
+    {
+      question: '슬라이드에서 특정 글자만 색을 바꾸고 싶어요',
+      answer: '텍스트 태그 안에서 <c: #색코드 | 글자> 로 특정 단어에 색을 지정할 수 있어요. 예: <bt: <c: #38bdf8 | AI>는 세상을 바꾼다>. 그라데이션은 <gc: #색1,#색2 | 글자>를 사용해요.',
+      followUps: [
+        { question: '여러 단어를 한 줄에 각각 다른 색으로 쓰고 싶어요', answer: '<colortext: #f00:빨간단어 | 일반단어 | #0af:파란단어> 형식을 쓰면 돼요. 색 지정 없는 항목은 기본 색으로 표시돼요.' },
+        { question: '빛번짐 글로우 텍스트는 어떻게 해요?', answer: '<textglow: #38bdf8,#a78bfa | 핵심 키워드 | 8> 형식으로 써요. 숫자는 크기(1~9)이고, 글자에 색과 빛번짐 효과가 동시에 적용돼요.' },
+      ]
+    },
+    {
+      question: 'PPT에서 고급 표(xtable)는 어떻게 써요?',
+      answer: '<xtable: 헤더1|헤더2|헤더3 // 행1|행2|행3 // 행1|행2|행3 | head:#1e40af | stripe:#0f172a | border:#444> 형식이에요. // 로 행 구분, | 로 열 구분, head/stripe/border로 색상을 지정해요.',
+      followUps: [
+        { question: '특정 셀 글자 색을 바꾸고 싶어요', answer: '셀 값 뒤에 ::#색코드 를 추가해요. 예: +200%::#4ade80 → 글자가 초록색으로 표시돼요.' },
+      ]
+    },
+    {
+      question: 'PPT 슬라이드에 차트를 어떻게 넣어요?',
+      answer: '<piechart:>, <barchart:>, <linechart:>, <stat:> 등 차트 태그를 슬라이드 내용으로 그냥 쓰면 돼요. 예: <piechart: A:30 | B:45 | C:25 title:시장 점유율>.',
+      followUps: [
+        { question: '차트 크기를 바꾸고 싶어요', answer: '태그 끝에 size:small, size:medium, size:large 중 하나를 추가하면 돼요. 예: <barchart: 2020:120 | 2021:200 | 2022:350 size:large>.' },
+        { question: '차트 제목은 어떻게 넣어요?', answer: '태그 뒤에 title:내용 을 추가해요. 예: <linechart: 1월:12 | 2월:18 | 3월:25 title:월별 방문자수>.' },
+      ]
+    },
+    {
+      question: '발표자 노트는 어떻게 넣어요?',
+      answer: '<slidenote: 발표 시 참고할 메모 내용> 을 슬라이드 내용 아무 곳에나 써요. 슬라이드 하단에 작은 글씨로 표시되고, PDF 출력 시에도 포함돼요.',
+      followUps: [
+        { question: '노트가 PDF에서 안 보여요', answer: '브라우저 인쇄 시 "배경 그래픽 인쇄" 옵션을 켜고 출력해보세요. PDF 저장 버튼을 사용하면 자동으로 포함돼요.' },
+      ]
+    },
+    {
+      question: '모바일에서 PPT가 이상하게 보여요',
+      answer: 'freebox 자유 배치 레이아웃은 모바일에서 세로 스택으로 재배치돼요. 이는 의도된 동작이에요. 원래 16:9 레이아웃은 PC 화면 또는 PDF로 저장할 때 정상 표시됩니다.',
+      followUps: [
+        { question: 'partition을 쓰면 모바일에서도 예쁘게 나오나요?', answer: '<partition: 50-50 | 16px> 같은 구조적 분할은 모바일에서도 반응형으로 세로 스택 변환이 돼요. freebox보다 모바일 호환성이 높아요.' },
+      ]
+    },
+    {
+      question: 'AI가 PPT 프롬프트를 받은 뒤 수학 풀이나 일반 설명을 해요',
+      answer: 'bytenode-ppt 프롬프트를 붙여넣은 뒤, AI가 "어떤 주제로 PPT를 만들까요?"라고 물어보면 그때 주제를 알려주세요. 순서가 맞지 않거나 다른 대화 중간에 프롬프트를 넣으면 AI가 일반 답변 모드로 응답할 수 있어요.',
+      followUps: [
+        { question: '주제를 줬는데도 태그가 아닌 일반 글로 써요', answer: 'AI에게 "bytenode-ppt 태그만 사용해서 코드 블록 없이 바로 출력해줘"라고 다시 요청해보세요. ChatGPT보다 Claude나 Gemini에서 더 잘 작동하는 경우도 있어요.' },
+        { question: '슬라이드가 10장 이상 필요해요', answer: '처음 요청 시 "슬라이드 15장으로 구성해줘"처럼 장수를 명시하면 돼요. 이미 만들어진 코드에 슬라이드를 추가하려면 AI에게 특정 슬라이드 뒤에 추가해달라고 요청하세요.' },
+      ]
+    },
+    {
+      question: 'PPT 슬라이드에 수식을 넣고 싶어요',
+      answer: '슬라이드 안에서도 $수식$ 인라인 수식과 $$수식$$ 블록 수식을 그대로 쓸 수 있어요. 예: <bt: 공식: $E = mc^2$>.',
+      followUps: [
+        { question: 'freebox 안에서 수식이 안 나와요', answer: 'freebox 내부에서도 수식이 정상 작동해요. 혹시 > 문자가 수식에 포함돼 있다면 \\gt로 바꿔주세요.' },
+        { question: '수식이 포함된 슬라이드 PDF가 깨져요', answer: 'PDF 저장 버튼 대신 Ctrl+P → PDF로 저장을 시도해보세요. 수식 렌더링 라이브러리가 완전히 로드된 뒤 저장하는 게 좋아요.' },
+      ]
+    },
+    /* ── Canva 스타일 태그 ── */
+    {
+      question: '3단 컬럼(columns3) 태그는 어떻게 써요?',
+      answer: '<columns3: 내용1 | 내용2 | 내용3> 형식으로 써요. 세 칸이 동일한 너비로 가로로 나란히 배치돼요. 비교·특징 나열 슬라이드에 적합해요.',
+      followUps: [
+        { question: '2단 컬럼은요?', answer: '<columns2: 왼쪽내용 | 오른쪽내용> 을 쓰면 돼요. 비율 조정은 지원하지 않고, 50-50으로 나뉘어요. 비율이 필요하면 <partition: 30-70 | 16px>을 사용하세요.' },
+      ]
+    },
+    {
+      question: '2×2 정보 그리드(grid2x2) 태그는 어떻게 써요?',
+      answer: '<grid2x2: 제목1:설명1 | 제목2:설명2 | 제목3:설명3 | 제목4:설명4 | accent:#38bdf8> 형식으로 써요. 각 셀은 제목:설명 구조이고 accent로 상단 강조색을 지정해요.',
+      followUps: [
+        { question: '셀이 4개 미만이어도 되나요?', answer: '4개 미만을 입력하면 나머지 셀은 빈 박스로 채워져요. 2개나 3개만 쓰고 싶다면 grid2x2보다 columns3나 columns2가 더 어울려요.' },
+        { question: 'accent 색을 안 쓰면 어떻게 돼요?', answer: 'accent 생략 시 기본 파란색(#60a5fa)으로 강조색이 적용돼요.' },
+      ]
+    },
+    {
+      question: 'A vs B 비교표(comparison) 태그는 어떻게 써요?',
+      answer: '<comparison: A라벨 | B라벨 // 항목1 | A값1 | B값1 // 항목2 | A값2 | B값2> 형식이에요. // 로 행을 구분하고, 첫 행이 A/B 헤더가 돼요.',
+      followUps: [
+        { question: '비교 항목이 10개 이상이에요', answer: '항목 수 제한은 없어요. // 를 계속 추가해서 행을 늘릴 수 있어요. 다만 슬라이드 한 장에 너무 많은 행을 넣으면 가독성이 떨어지니 5~7개 내외를 추천해요.' },
+      ]
+    },
+    {
+      question: '포스트잇 메모(annotate) 태그는 어떻게 써요?',
+      answer: '<annotate: 메모 내용 | #fbbf24> 형식이에요. 두 번째 인자가 배경색이에요. 노란색(#fbbf24)이 기본이고, 원하는 색으로 바꿀 수 있어요.',
+      followUps: [
+        { question: '어디에 쓰면 좋아요?', answer: '보충 설명, 주의사항, "잠깐!" 같은 짧은 메모에 적합해요. freebox 안에 넣으면 슬라이드 특정 위치에 포스트잇처럼 배치할 수 있어요.' },
+      ]
+    },
+    {
+      question: '매거진 레이아웃(magazine) 태그는 어떻게 써요?',
+      answer: '<magazine: /uploads/이미지.jpg | 제목 | 설명 내용 | left> 형식이에요. 이미지와 텍스트가 가로로 나란히 배치돼요. 마지막 인자(left/right)로 이미지 위치를 바꿀 수 있어요.',
+      followUps: [
+        { question: '이미지 없이 텍스트만 넣으면 어떻게 돼요?', answer: '이미지 URL을 빈 값으로 두면 텍스트만 표시돼요. 하지만 이 경우 그냥 <bt:>나 <5t:>를 쓰는 게 더 깔끔해요.' },
+      ]
+    },
+    /* ── 인포그래픽 ── */
+    {
+      question: '차트(barchart, piechart 등)가 아무것도 안 나와요',
+      answer: '차트 태그는 bytegraphic 1e 또는 bytenode-ppt 1e 모드에서만 작동해요. 글쓰기 시 모드를 올바르게 선택했는지 확인하세요. bytenode 1(기본) 모드에서는 차트가 렌더링되지 않아요.',
+      followUps: [
+        { question: '모드는 어디서 바꿔요?', answer: '글쓰기 버튼을 누르면 모드 선택 화면이 나와요. 이미 작성 중이라면 에디터 상단의 모드 드롭다운에서 변경할 수 있어요.' },
+        { question: '지원하는 차트 종류가 뭐예요?', answer: 'piechart, donut, barchart, hbar, linechart, areachart, radar, funnel, pyramid, gauge, bubbles, versus 등 12종 이상의 차트를 지원해요. 코드 설명서에서 전체 목록을 확인하세요.' },
+      ]
+    },
+    {
+      question: '파이차트 각 항목 색상을 바꾸고 싶어요',
+      answer: '각 항목 뒤에 :색코드를 붙이면 돼요. 예: <piechart: 사과:35:#ef4444 | 바나나:25:#fbbf24 | 포도:40:#a78bfa title:과일 비율>.',
+      followUps: [
+        { question: '항목 수가 너무 많아요', answer: '항목이 6개 이상이면 파이차트보다 barchart나 hbar(가로 막대)가 가독성이 더 좋아요. 항목이 많을 때는 "기타"로 묶는 것도 방법이에요.' },
+      ]
+    },
+    {
+      question: '통계 수치(stat) 태그는 어떻게 써요?',
+      answer: '<stat: 수치 | 라벨 | 색> 형식이에요. 예: <stat: 4,200만 | AI 서비스 사용자 | #60a5fa>. 큰 숫자를 강조해서 보여주는 KPI 카드예요.',
+      followUps: [
+        { question: 'stat을 여러 개 나란히 보이고 싶어요', answer: 'stat 태그를 여러 줄 연속으로 쓰면 자동으로 가로로 나란히 배치돼요. 3개 이하일 때 가장 보기 좋아요.' },
+      ]
+    },
+    {
+      question: '진행도 막대(progress bar)는 어떻게 써요?',
+      answer: '<progress: 라벨 | 값% | 색> 형식이에요. 예: <progress: 프로젝트 완료율 | 75% | #4ade80>. 여러 줄 쓰면 아래로 나열돼요.',
+      followUps: [
+        { question: '100% 이상의 값을 표시할 수 있어요?', answer: '값은 0~100% 사이로 써야 해요. 100% 초과 값은 100%로 클램핑돼요. 목표 대비 달성률 같은 경우에는 gauge 태그를 고려해보세요.' },
+      ]
+    },
+    {
+      question: '인포그래픽 결과물을 PDF로 저장하고 싶어요',
+      answer: '게시물 상단의 PDF 버튼을 누르거나 Ctrl+P → PDF로 저장을 선택하세요. 인포그래픽 모드는 지정한 출력 비율(A4/16:9 등)에 맞게 레이아웃이 조정돼요.',
+      followUps: [
+        { question: '출력 비율은 어디서 바꿔요?', answer: '에디터 상단에 비율 선택 드롭다운이 있어요. 16:9(발표), A4(인쇄), 1:1(정사각) 등을 선택할 수 있어요.' },
+      ]
+    },
+    /* ── byteexam ── */
+    {
+      question: 'byteexam 시험지가 저장이 안 돼요',
+      answer: 'AI 코드에서 ---BYTEEXAM-START--- 부터 ---BYTEEXAM-END--- 사이의 내용만 정확히 복사해야 해요. 그 바깥의 AI 설명 텍스트가 섞이면 파싱 오류가 나요.',
+      followUps: [
+        { question: '마커를 포함해서 복사해야 하나요?', answer: 'START/END 마커는 포함해도 되고 안 해도 돼요. 파서가 마커를 자동으로 인식해서 제거하고 내용만 처리해요.' },
+        { question: '저장은 됐는데 문제가 깨져서 나와요', answer: 'type= 필드가 올바른지 확인해보세요. 객관식은 type=5choice, 보기형은 type=5choice_with_bogi, 단답형은 type=short, 서술형은 type=essay 예요.' },
+      ]
+    },
+    {
+      question: 'byteexam 문제에서 수식이 이상하게 나와요',
+      answer: '수식이 $...$ 또는 $$...$$ 로 감싸져 있는지 확인하세요. AI가 $ 기호를 빠뜨리거나, \\frac{a}{b} 대신 a/b 로 썼을 수 있어요.',
+      followUps: [
+        { question: 'AI에게 수식을 정확하게 쓰라고 하는 방법이 있어요?', answer: '프롬프트를 붙여넣을 때 "수식은 반드시 LaTeX 형식 $...$ 으로 써줘"라고 명시적으로 요청해보세요. byteexam 전용 프롬프트 생성기를 쓰면 이미 이 지시가 포함돼 있어요.' },
+        { question: '분수식이 인라인으로 작게 나와요', answer: '$$\\frac{a}{b}$$ 처럼 $$ 두 개로 감싸면 블록(독립 줄)으로 크게 표시돼요. 선택지 안의 수식은 $...$ 인라인이 더 자연스러워요.' },
+      ]
+    },
+    {
+      question: 'ㄱ,ㄴ,ㄷ 보기형 문제는 어떻게 만들어요?',
+      answer: 'type=5choice_with_bogi 로 설정하고, bogi_1=ㄱ. 내용, bogi_2=ㄴ. 내용, bogi_3=ㄷ. 내용 을 추가하면 돼요. 선택지는 "ㄱ만 옳다", "ㄱ,ㄴ 옳다" 형식으로 구성해요.',
+      followUps: [
+        { question: 'AI 프롬프트 생성기에서 보기형을 선택하면 자동으로 나오나요?', answer: '네, byteexam 프롬프트 생성기에서 문제 유형을 "5지선다(보기형)" 으로 선택하면 AI가 자동으로 bogi_ 필드를 포함한 코드를 생성해줘요.' },
+      ]
+    },
+    {
+      question: '문제 배점은 어떻게 설정해요?',
+      answer: '각 문제 블록에 point=배점 를 추가하면 돼요. 예: point=3 → 3점짜리 문제. 배점은 2, 3, 4, 5 중 하나를 주로 사용하고, 시험 총점에 맞게 조정하세요.',
+      followUps: [
+        { question: '배점 합계가 자동으로 계산되나요?', answer: '현재 자동 합계 표시 기능은 없어요. 각 문제의 point= 값을 직접 더해서 총점을 확인하세요.' },
+      ]
+    },
+    {
+      question: 'byteexam 시험지를 PDF로 저장하고 싶어요',
+      answer: '시험지 상단의 "PDF 다운로드" 버튼을 누르면 A4 2단 레이아웃으로 자동 저장돼요. 또는 Ctrl+P → PDF로 저장도 가능해요. 문제가 페이지 경계에서 잘리지 않도록 자동으로 배치돼요.',
+      followUps: [
+        { question: '정답과 해설을 제외하고 인쇄하고 싶어요', answer: '시험지 보기 화면에서 "정답/해설 숨기기" 옵션을 켜고 PDF로 저장하면 학생 배부용 시험지가 만들어져요.' },
+      ]
+    },
+    /* ── 계정/인증 ── */
+    {
+      question: '회원가입이 안 돼요',
+      answer: '아이디는 영문 소문자와 숫자만 사용 가능하고, 비밀번호는 최소 6자 이상이어야 해요. 이미 사용 중인 아이디라면 다른 아이디로 시도해보세요.',
+      followUps: [
+        { question: '아이디 형식이 맞는데도 안 돼요', answer: '브라우저의 자동완성이 잘못된 값을 입력했을 수 있어요. 모든 칸을 직접 지우고 다시 입력해보세요. 그래도 안 되면 다른 브라우저로 시도해보세요.' },
+        { question: '가입된 계정이 없는지 확인하려면요?', answer: '로그인 창에서 내 아이디로 로그인을 시도해보세요. "사용자를 찾을 수 없음" 오류가 나오면 계정이 없는 거고, 비밀번호 오류가 나오면 이미 가입된 계정이에요.' },
+      ]
+    },
+    {
+      question: '로그인이 안 돼요',
+      answer: '아이디와 비밀번호가 정확한지 확인해보세요. 대소문자도 구분하니 주의하세요. 비밀번호가 기억나지 않으면 관리자에게 초기화를 요청해야 해요.',
+      followUps: [
+        { question: '아이디를 잊어버렸어요', answer: '현재 아이디 찾기 기능은 없어요. 처음 가입할 때 사용한 아이디를 기억해보거나, 새 계정을 만들어야 할 수 있어요.' },
+        { question: '로그인해도 바로 로그아웃 돼요', answer: '브라우저의 쿠키나 로컬스토리지가 차단돼 있으면 세션이 유지되지 않아요. 브라우저 설정에서 쿠키 허용 여부를 확인해보세요.' },
+      ]
+    },
+    {
+      question: '비밀번호를 바꾸고 싶어요',
+      answer: '로그인 후 오른쪽 상단 프로필 → 설정(⚙)에서 비밀번호 변경이 가능해요. 현재 비밀번호를 먼저 입력한 뒤 새 비밀번호를 설정하면 됩니다.',
+      followUps: [
+        { question: '현재 비밀번호가 기억나지 않아요', answer: '현재 비밀번호 없이는 변경할 수 없어요. 관리자에게 비밀번호 초기화를 요청하는 방법밖에 없어요.' },
+      ]
+    },
+    {
+      question: 'byteexam도 bytenode 계정으로 로그인하는 거예요?',
+      answer: '네, byteexam과 bytenode는 같은 계정을 공유해요. bytenode에서 사용하는 아이디와 비밀번호로 byteexam에 그대로 로그인하면 됩니다.',
+      followUps: [
+        { question: 'byteexam 주소는 어떻게 돼요?', answer: 'bytenode 상단 메뉴의 "byteexam" 링크를 클릭하거나, byteexam109.vercel.app 으로 직접 접속하면 돼요.' },
+        { question: 'bytenode와 byteexam에서 만든 자료가 연동되나요?', answer: '현재 자료는 연동되지 않아요. bytenode 게시물은 bytenode에, byteexam 시험지는 byteexam에 각각 따로 저장돼요.' },
+      ]
+    },
+    {
+      question: '닉네임이나 프로필 사진을 바꾸고 싶어요',
+      answer: '로그인 후 상단 오른쪽 프로필 → 설정에서 닉네임과 프로필 사진(아바타 URL)을 변경할 수 있어요.',
+      followUps: [
+        { question: '프로필 사진으로 직접 찍은 사진을 쓰고 싶어요', answer: '먼저 bytenode에 이미지를 업로드한 뒤, 그 이미지 경로(/uploads/파일명.jpg)를 아바타 URL 칸에 입력하면 돼요.' },
+      ]
+    },
+  ];
+
+  const batch = db.batch();
+  DEFAULT_FAQS.forEach((faq, i) => {
+    const ref = db.collection('chatbot_faqs').doc();
+    batch.set(ref, { ...faq, order: (i + 1) * 1000, createdAt: Date.now() });
+  });
+  await batch.commit();
+  console.log(`챗봇 FAQ ${DEFAULT_FAQS.length}개 기본 데이터 시드 완료`);
+}
+seedChatbotFaqs().catch(e => console.error('챗봇 FAQ 시드 실패', e));
+
 /* ── 미들웨어 ── */
 app.use(helmet({
   contentSecurityPolicy: {
