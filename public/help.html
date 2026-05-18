@@ -149,6 +149,10 @@ body.dark .demo-badge{background:#2a2d5e;color:#a5b4fc}
       <li><a href="#ppt-canvas" style="color:#f472b6">자유 배치</a></li>
       <li><a href="#ppt-table" style="color:#f472b6">고급 표 (xtable)</a></li>
       <li><a href="#ppt-effects" style="color:#f472b6">고급 시각 효과</a></li>
+      <li class="section-title" style="color:#34d399">byteexam 1s</li>
+      <li><a href="#exam-intro" style="color:#34d399">시험지 구조</a></li>
+      <li><a href="#exam-types" style="color:#34d399">문항 유형</a></li>
+      <li><a href="#exam-inline" style="color:#34d399">인라인 요소</a></li>
       <li class="section-title" style="color:#818cf8">인터랙티브</li>
       <li><a href="#byteflash" style="color:#818cf8">byteflash (플래시카드)</a></li>
       <li><a href="#bytestep" style="color:#818cf8">bytestep (단계별)</a></li>
@@ -653,6 +657,169 @@ $$\ce{6CO2 + 6H2O -> C6H12O6 + 6O2}$$
       <div class="example-label">mockup 예시</div>
       <div class="example-body">&lt;mockup: laptop | /uploads/dashboard.png | 대시보드 미리보기&gt;
 &lt;mockup: mobile | /uploads/app.png | 앱 화면&gt;</div>
+    </div>
+
+    <!-- ═══════════════════════════════════
+         byteexam 1s
+    ════════════════════════════════════ -->
+
+    <h2 id="exam-intro" style="color:#34d399;border-bottom:2px solid #34d399;padding-bottom:6px">byteexam 1s — 시험지 구조</h2>
+    <p>byteexam은 전용 DSL 형식으로 시험지를 작성합니다. HTML·마크다운과 완전히 다른 문법이며, 반드시 <code>---BYTEEXAM-START---</code>와 <code>---BYTEEXAM-END---</code> 사이에 작성합니다.</p>
+    <div class="note">AI에게 코드를 생성할 때는 byteexam 앱(<strong>byteexam109.vercel.app</strong>)의 프롬프트 생성기를 사용하면 시험 범위·난이도를 입력해 맞춤 프롬프트를 자동 생성할 수 있습니다.</div>
+
+    <h2 style="font-size:1rem;margin:24px 0 10px">[HEADER] 블록</h2>
+    <table>
+      <tr><th>필드</th><th>설명</th><th>예시</th></tr>
+      <tr><td><code>title=</code></td><td>시험지 제목</td><td>2025 1학기 중간고사</td></tr>
+      <tr><td><code>subject=</code></td><td>과목·단원</td><td>공통수학1 — 다항식</td></tr>
+      <tr><td><code>difficulty=</code></td><td>난이도</td><td>기본 / 실력 / 대전권기출 / 강남8학군 / 모의고사변형 / 과학고+영재고</td></tr>
+      <tr><td><code>date=</code></td><td>시험 날짜</td><td>2025-06-01</td></tr>
+      <tr><td><code>total=</code></td><td>총 문항 수</td><td>20</td></tr>
+    </table>
+
+    <h2 style="font-size:1rem;margin:24px 0 10px">[QUESTION] 블록 — 공통 필드</h2>
+    <table>
+      <tr><th>필드</th><th>설명</th></tr>
+      <tr><td><code>num=</code></td><td>문항 번호 (1부터 순서대로)</td></tr>
+      <tr><td><code>type=</code></td><td>문항 유형 — 아래 표 참고</td></tr>
+      <tr><td><code>text=</code></td><td>문제 본문. 조건 설명 + 구하는 것을 반드시 포함</td></tr>
+      <tr><td><code>answer=</code></td><td>정답 번호 또는 답 텍스트</td></tr>
+      <tr><td><code>point=</code></td><td>배점 (정수)</td></tr>
+      <tr><td><code>explain=</code></td><td>해설 — 풀이 단계 + 오답 선지별 오류 원인</td></tr>
+    </table>
+
+    <h2 style="font-size:1rem;margin:24px 0 10px">[ANSWER_SHEET] 블록</h2>
+    <p><code>---BYTEEXAM-END---</code> 직전에 반드시 포함. 문항 번호와 정답을 나열합니다.</p>
+    <div class="example">
+      <div class="example-label">전체 구조 예시</div>
+      <div class="example-body">---BYTEEXAM-START---
+[HEADER]
+title=2025 1학기 중간고사
+subject=공통수학1 — 다항식
+difficulty=실력
+date=2025-06-01
+total=3
+
+[QUESTION]
+num=1
+type=5choice
+text=다항식 $f(x) = x^3 - 2x + 1$을 $x-1$로 나눈 나머지를 구하시오.
+choice1=① 0
+choice2=② 1
+choice3=③ 2
+choice4=④ 3
+choice5=⑤ 4
+answer=1
+point=3
+explain=나머지 정리에 의해 f(1)=1-2+1=0이므로 나머지는 0.
+
+[ANSWER_SHEET]
+1=①
+---BYTEEXAM-END---</div>
+    </div>
+
+    <!-- ═══ 문항 유형 ═══ -->
+    <h2 id="exam-types" style="color:#34d399;border-bottom:2px solid #34d399;padding-bottom:6px">byteexam 1s — 문항 유형</h2>
+    <table>
+      <tr><th>type 값</th><th>유형</th><th>추가 필드</th></tr>
+      <tr><td><code>5choice</code></td><td>일반 오지선다</td><td><code>choice1</code>~<code>choice5</code> (①②③④⑤ 원문자로 시작)</td></tr>
+      <tr><td><code>5choice_with_bogi</code></td><td>보기(ㄱㄴㄷ) 포함 오지선다</td><td><code>bogi_1</code>~<code>bogi_3</code> + <code>choice1</code>~<code>choice5</code></td></tr>
+      <tr><td><code>short</code></td><td>단답·빈칸 채우기</td><td>없음 (answer= 에 답 텍스트)</td></tr>
+      <tr><td><code>essay</code></td><td>서술형</td><td>없음 (explain= 에 모범 답안·채점 기준)</td></tr>
+    </table>
+
+    <div class="example">
+      <div class="example-label">보기형 (5choice_with_bogi) 예시</div>
+      <div class="example-body">[QUESTION]
+num=5
+type=5choice_with_bogi
+text=실수 전체의 집합에서 정의된 함수 $f(x)$에 대하여 보기에서 옳은 것만을 있는 대로 고른 것은?
+bogi_1=ㄱ. $f(1)=f(-1)$이면 $f$는 우함수이다.
+bogi_2=ㄴ. $f(x)+f(-x)=0$이면 $f$는 기함수이다.
+bogi_3=ㄷ. $f(0)=0$이면 $f$는 기함수이다.
+choice1=① ㄱ
+choice2=② ㄴ
+choice3=③ ㄱ, ㄴ
+choice4=④ ㄴ, ㄷ
+choice5=⑤ ㄱ, ㄴ, ㄷ
+answer=2
+point=4
+explain=ㄴ만 옳다. ㄱ: f(1)=f(-1)은 우함수의 필요조건이지 충분조건이 아님. ㄷ: f(0)=0은 기함수의 필요조건일 뿐.</div>
+    </div>
+
+    <!-- ═══ 인라인 요소 ═══ -->
+    <h2 id="exam-inline" style="color:#34d399;border-bottom:2px solid #34d399;padding-bottom:6px">byteexam 1s — 인라인 요소</h2>
+    <p>text=, explain= 필드 안에 인라인으로 삽입합니다. 수식·도형·표·지문을 문제와 해설에 넣을 수 있습니다.</p>
+
+    <table>
+      <tr><th>요소</th><th>설명</th></tr>
+      <tr><td><code>$수식$</code></td><td>LaTeX 인라인 수식</td></tr>
+      <tr><td><code>$$수식$$</code></td><td>LaTeX 블록 수식 (별도 줄)</td></tr>
+      <tr><td><code>\SI{값}{\단위}</code></td><td>SI 단위 표기 (예: <code>\SI{9.8}{\metre\per\second\squared}</code>)</td></tr>
+      <tr><td><code>[COORD:...]</code></td><td>좌표평면 + 그래프 삽입</td></tr>
+      <tr><td><code>[FIGURE:...]</code></td><td>좌표계 없이 기하 도형만 삽입</td></tr>
+      <tr><td><code>[TABLE:...]</code></td><td>함수값표·데이터표 삽입</td></tr>
+      <tr><td><code>[PASSAGE:...]</code></td><td>국어·영어 장문 지문 박스 삽입</td></tr>
+    </table>
+
+    <h2 style="font-size:1rem;margin:24px 0 10px">[COORD:...] — 좌표평면</h2>
+    <p><code>[COORD:xmin=-4,xmax=4,ymin=-3,ymax=5,w=200,h=200;요소;요소;...]</code> 형식으로 사용합니다.</p>
+    <table>
+      <tr><th>요소</th><th>설명</th><th>예시</th></tr>
+      <tr><td><code>pt(x,y,라벨)</code></td><td>채운 점</td><td><code>pt(1,2,A)</code></td></tr>
+      <tr><td><code>open_pt(x,y,라벨)</code></td><td>빈 원(열린점)</td><td><code>open_pt(3,0,B)</code></td></tr>
+      <tr><td><code>line(x1,y1,x2,y2)</code></td><td>선분</td><td><code>line(0,0,3,4)</code></td></tr>
+      <tr><td><code>dline(x1,y1,x2,y2)</code></td><td>점선 선분</td><td><code>dline(1,0,1,3)</code></td></tr>
+      <tr><td><code>ray(x1,y1,x2,y2)</code></td><td>반직선 (화살표)</td><td><code>ray(0,0,3,2)</code></td></tr>
+      <tr><td><code>circle(cx,cy,r)</code></td><td>원</td><td><code>circle(0,0,2)</code></td></tr>
+      <tr><td><code>poly(x1,y1,...)</code></td><td>다각형</td><td><code>poly(0,0,3,0,1.5,2.6)</code></td></tr>
+      <tr><td><code>parabola(a,b,c,x시작,x끝)</code></td><td>포물선 ($ax^2+bx+c$)</td><td><code>parabola(1,0,-2,-3,3)</code></td></tr>
+      <tr><td><code>curve(x1,y1,x2,y2,...)</code></td><td>꺾은선 곡선</td><td><code>curve(-2,4,-1,1,0,0,1,1,2,4)</code></td></tr>
+      <tr><td><code>label(x,y,텍스트)</code></td><td>라벨</td><td><code>label(2,3,f(x))</code></td></tr>
+      <tr><td><code>angle(cx,cy,r,각1,각2)</code></td><td>호 (각도 표시)</td><td><code>angle(0,0,0.4,0,90)</code></td></tr>
+    </table>
+    <div class="example">
+      <div class="example-label">COORD 예시</div>
+      <div class="example-body">text=다음 좌표평면에서 포물선과 점 A의 위치를 보고 답하시오.
+[COORD:xmin=-3,xmax=3,ymin=-3,ymax=3;pt(1,2,A);parabola(1,0,-1,-3,3);dline(1,0,1,2)]</div>
+    </div>
+
+    <h2 style="font-size:1rem;margin:24px 0 10px">[FIGURE:...] — 기하 도형</h2>
+    <p><code>[FIGURE:w=200,h=160;요소;요소;...]</code> 형식. 픽셀 좌표 직접 지정 (좌상단=0,0).</p>
+    <table>
+      <tr><th>요소</th><th>설명</th></tr>
+      <tr><td><code>poly(x1,y1,...)</code></td><td>다각형 (삼각형 등)</td></tr>
+      <tr><td><code>fill_poly(x1,y1,...)</code></td><td>색칠 다각형</td></tr>
+      <tr><td><code>circle(cx,cy,r)</code></td><td>원</td></tr>
+      <tr><td><code>arc(cx,cy,r,각1,각2)</code></td><td>호</td></tr>
+      <tr><td><code>line / dline</code></td><td>선분 / 점선</td></tr>
+      <tr><td><code>label(x,y,텍스트)</code></td><td>라벨</td></tr>
+      <tr><td><code>pt(x,y,라벨)</code></td><td>점</td></tr>
+      <tr><td><code>right_angle(x,y,크기,각)</code></td><td>직각 기호</td></tr>
+    </table>
+    <div class="example">
+      <div class="example-label">FIGURE 예시</div>
+      <div class="example-body">text=직각삼각형 ABC에서 ∠C=90°일 때, 빗변의 길이를 구하시오.
+[FIGURE:w=180,h=160;poly(90,20,170,140,10,140);right_angle(10,140,10,0);label(90,12,A);label(175,148,B);label(5,148,C)]</div>
+    </div>
+
+    <h2 style="font-size:1rem;margin:24px 0 10px">[TABLE:...] — 함수값표</h2>
+    <p>열 구분: <code>|</code> &nbsp;/&nbsp; 행 구분: <code>\n</code> &nbsp;/&nbsp; 첫 행=자동 헤더. 수식 포함 가능.</p>
+    <div class="example">
+      <div class="example-label">TABLE 예시</div>
+      <div class="example-body">text=아래 표를 보고 $f(2)+f(-2)$의 값을 구하시오.
+[TABLE:$x$|-2|-1|0|1|2\n$f(x)$|4|1|0|1|4]
+
+헤더 없는 표:
+[TABLE:noheader:값1|값2\n값3|값4]</div>
+    </div>
+
+    <h2 style="font-size:1rem;margin:24px 0 10px">[PASSAGE:...] — 지문 박스</h2>
+    <p>국어·영어 장문 지문을 박스로 표시. 첫 줄이 50자 이하이면 자동으로 제목(굵게) 처리.</p>
+    <div class="example">
+      <div class="example-label">PASSAGE 예시</div>
+      <div class="example-body">text=다음 글을 읽고 물음에 답하시오.
+[PASSAGE:지문 제목(선택)\n지문 내용 첫 번째 줄\n두 번째 줄로 이어집니다.] 위 글의 주제는?</div>
     </div>
 
     <!-- ═══════════════════════════════════
