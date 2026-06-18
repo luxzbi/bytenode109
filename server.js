@@ -11,6 +11,7 @@ const rateLimit    = require('express-rate-limit');
 const cors         = require('cors');
 const multer       = require('multer');
 const admin        = require('firebase-admin');
+const fetch        = require('node-fetch');
 
 /* ── Firebase 초기화 ── */
 const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
@@ -1030,6 +1031,124 @@ app.patch('/api/chatbot/faqs/:id/move', auth, adminOnly, async (req, res) => {
     batch.update(db.collection('chatbot_faqs').doc(docs[swapIdx].id), { order: docs[idx].order });
     await batch.commit();
     res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+/* ══ AI 챗봇 엔드포인트 ══ */
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
+const CHATBOT_SYSTEM_PROMPT = `당신은 bytenode와 byteexam 플랫폼 전용 AI 도우미입니다. 한국어로 친절하고 간결하게 답변하세요.
+
+## bytenode란?
+bytenode는 수업 자료(게시물)를 작성·공유하는 교육 플랫폼입니다. 선생님이 직접 콘텐츠를 만들고 학생이 열람합니다.
+- 게시물 작성: 상단 "새 게시물" 버튼 → bytenode 코드 에디터로 내용 작성
+- bytenode 코드 문법: <tagname: 내용> 형태의 태그 시스템 사용
+  - <h1: 제목>, <h2: 소제목> — 제목 태그
+  - <text: 내용> — 본문 단락
+  - <img: URL> — 이미지 삽입
+  - <math: LaTeX식> — 수식 렌더링 (KaTeX)
+  - <table: ...> — 표 삽입
+  - <code: 언어 | 코드> — 코드 블록
+  - <ppt: 슬라이드 내용> — 프레젠테이션 슬라이드
+  - <quiz: 문제내용> — 퀴즈 삽입
+- 내 게시물 관리: 우측 상단 프로필 → "내 게시물"
+- 공개/비공개 설정 가능
+
+## byteexam이란?
+byteexam은 AI를 이용해 시험지를 자동 생성하는 도구입니다. 상단 메뉴에서 "byteexam" 클릭 또는 byteexam109.vercel.app 접속.
+- 시험지 만들기: "시험지 프롬프트 만들기" 버튼 → 유형/과목/범위/난이도 설정 → 프롬프트 복사 → AI(Claude/ChatGPT 등)에 붙여넣기 → 결과 붙여넣기
+- 지원 과목: 수학, 독토글 (현재 서비스 중)
+- 지원 난이도: 기본, 실력, 대전권기출, 강남8학군+전국단위자사고, 모의고사변형, 과학고+영재고, 수능-쉬움, 수능-중간
+- byteexam 코드 형식: ---BYTEEXAM-START--- / ---BYTEEXAM-END--- 사이에 [HEADER], [QUESTION], [PAGE], [ANSWER_SHEET] 블록으로 구성
+- 문항 유형: 5지선다(5choice), 보기형(5choice_with_bogi), 단답형(short), 서술형(essay) 등
+- 저장된 시험지는 DOCX 내보내기, PDF 인쇄 가능
+- 최대 30개 시험지 저장 가능 (초과 시 오래된 것 자동 삭제)
+
+## 계정 관련
+- 회원가입: 상단 "로그인" → "회원가입" 탭
+- bytenode와 byteexam은 같은 계정으로 로그인
+- 비밀번호 변경: 프로필 → 계정 설정
+
+## 주의사항
+- 특정 문제집·출판사명은 시험지 출제에 사용되지 않습니다
+- 시험지는 AI가 생성하므로 반드시 검토 후 사용하세요
+- 수능·자격증 시험 유형은 준비중입니다 (2026년 추가 예정)
+
+검색 결과가 제공된 경우 그 내용을 참고하여 답변하되, 출처를 명시하세요.
+모르는 내용이나 플랫폼 외 사항은 솔직하게 "잘 모르겠다"고 하세요.`;
+
+async function searchDuckDuckGo(query) {
+  try {
+    const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1&kl=kr-kr`;
+    const r = await fetch(url, { headers: { 'User-Agent': 'bytenode-chatbot/1.0' } });
+    const data = await r.json();
+    const results = [];
+    if (data.AbstractText) results.push({ source: 'DuckDuckGo', text: data.AbstractText.slice(0, 400) });
+    if (data.RelatedTopics?.length) {
+      data.RelatedTopics.slice(0, 3).forEach(t => {
+        if (t.Text) results.push({ source: 'DuckDuckGo 관련', text: t.Text.slice(0, 200) });
+      });
+    }
+    return results;
+  } catch { return []; }
+}
+
+async function searchWikipedia(query) {
+  try {
+    const url = `https://ko.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`;
+    const r = await fetch(url, { headers: { 'User-Agent': 'bytenode-chatbot/1.0' } });
+    if (!r.ok) return [];
+    const data = await r.json();
+    if (data.extract) return [{ source: '위키백과', text: data.extract.slice(0, 500) }];
+    return [];
+  } catch { return []; }
+}
+
+const needsWebSearch = msg => /검색|찾아|알려|뭐야|무엇|어떤|어디|언제|누구|왜|how|what|when|where|who|why/i.test(msg) && !/bytenode|byteexam|시험지|게시물|로그인|회원가입/.test(msg);
+
+app.post('/api/chatbot/ai', async (req, res) => {
+  if (!OPENROUTER_API_KEY) return res.status(503).json({ error: 'AI 서비스가 설정되지 않았습니다.' });
+  const { message, history = [] } = req.body || {};
+  if (!message || typeof message !== 'string') return res.status(400).json({ error: '메시지가 없습니다.' });
+  const trimmed = message.trim().slice(0, 1000);
+
+  let searchContext = '';
+  if (needsWebSearch(trimmed)) {
+    const [ddg, wiki] = await Promise.all([searchDuckDuckGo(trimmed), searchWikipedia(trimmed)]);
+    const all = [...ddg, ...wiki];
+    if (all.length) {
+      searchContext = '\n\n[검색 결과]\n' + all.map(r => `[${r.source}] ${r.text}`).join('\n\n');
+    }
+  }
+
+  const messages = [
+    { role: 'system', content: CHATBOT_SYSTEM_PROMPT + searchContext },
+    ...(Array.isArray(history) ? history.slice(-10) : []),
+    { role: 'user', content: trimmed }
+  ];
+
+  try {
+    const resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': process.env.BYTENODE_URL || 'http://localhost:4002',
+        'X-Title': 'bytenode chatbot'
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-flash-1.5',
+        messages,
+        max_tokens: 800,
+        temperature: 0.7
+      })
+    });
+    if (!resp.ok) {
+      const err = await resp.text();
+      return res.status(502).json({ error: 'AI 응답 오류: ' + err.slice(0, 200) });
+    }
+    const data = await resp.json();
+    const reply = data.choices?.[0]?.message?.content || '죄송합니다, 응답을 생성할 수 없었습니다.';
+    res.json({ reply });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
