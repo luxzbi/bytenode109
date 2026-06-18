@@ -1136,7 +1136,7 @@ app.post('/api/chatbot/ai', async (req, res) => {
         'X-Title': 'bytenode chatbot'
       },
       body: JSON.stringify({
-        model: 'google/gemini-flash-1.5',
+        model: 'openai/gpt-4o-mini',
         messages,
         max_tokens: 800,
         temperature: 0.7
