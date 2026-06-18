@@ -1269,6 +1269,7 @@ const BE1S_SUNEUNG_PROMPT = `
 /* ── byteexam 1s 카테고리 선택 상태 ── */
 let _be1sCat = '', _be1sSubMode = '', _be1sRegion = '', _be1sSuneungMode = 'normal';
 let _be1sSubject = '', _be1sSubjectCustomName = '', _be1sSubjectCustomDesc = '';
+let _be1sDoktoogleBooks = [];
 const _BC_I = 'flex:1;background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.1);border-radius:6px;padding:5px 7px;color:rgba(255,255,255,.4);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit';
 const _BC_A = 'flex:1;background:rgba(108,99,255,.2);border:1.5px solid rgba(108,99,255,.5);border-radius:6px;padding:5px 7px;color:#a78bfa;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit';
 const _BSUB_I = 'background:rgba(255,255,255,.03);border:1.5px solid rgba(255,255,255,.08);border-radius:6px;padding:7px 3px;color:rgba(255,255,255,.5);font-size:10px;font-weight:600;cursor:pointer;text-align:center;font-family:inherit;line-height:1.3';
@@ -1279,43 +1280,24 @@ const _BR_I = 'background:rgba(255,255,255,.03);border:1px solid rgba(255,255,25
 const _BR_A = 'background:rgba(108,99,255,.2);border:1.5px solid rgba(108,99,255,.5);border-radius:5px;padding:5px 2px;color:#a78bfa;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;width:100%';
 
 function setBe1sCat(cat) {
-  _be1sCat = cat; _be1sSubMode = ''; _be1sRegion = '';
-  ['be1s-cat-naesin','be1s-cat-suneung','be1s-cat-license'].forEach(id=>{const b=document.getElementById(id);if(b)b.style.cssText=_BC_I;});
-  const ab=document.getElementById({내신:'be1s-cat-naesin',수능:'be1s-cat-suneung',자격증:'be1s-cat-license'}[cat]);
+  _be1sCat = cat;
+  ['be1s-cat-naesin'].forEach(id=>{const b=document.getElementById(id);if(b)b.style.cssText=_BC_I;});
+  const ab=document.getElementById('be1s-cat-naesin');
   if(ab)ab.style.cssText=_BC_A;
-  const sw=document.getElementById('be1s-submode-wrap'); if(sw)sw.style.display=cat==='내신'?'flex':'none';
-  const rw=document.getElementById('be1s-region-wrap'); if(rw)rw.style.display='none';
-  ['be1s-sub-region','be1s-sub-diff','be1s-sub-mock'].forEach(id=>{const b=document.getElementById(id);if(b)b.style.cssText=_BS_I;});
-  document.querySelectorAll('[id^="be1s-r-"]').forEach(b=>{if(b)b.style.cssText=_BR_I;});
-  const sunw=document.getElementById('be1s-suneung-wrap'); if(sunw)sunw.style.display=cat==='수능'?'flex':'none';
-  const scr=document.getElementById('be1s-scope-row'); if(scr)scr.style.display=cat==='수능'?'none':'';
-  const subjw=document.getElementById('be1s-subject-wrap'); if(subjw)subjw.style.display=(cat==='내신'||cat==='수능')?'block':'none';
-  if(cat==='수능'){_be1sSuneungMode='normal';setBe1sSuneungMode('normal');}
+  const subjw=document.getElementById('be1s-subject-wrap'); if(subjw)subjw.style.display='block';
 }
-function setBe1sSubMode(mode) {
-  _be1sSubMode = mode; _be1sRegion = '';
-  ['be1s-sub-region','be1s-sub-diff','be1s-sub-mock'].forEach(id=>{const b=document.getElementById(id);if(b)b.style.cssText=_BS_I;});
-  const ab=document.getElementById({지역별:'be1s-sub-region',난이도유형별:'be1s-sub-diff',모의고사대비:'be1s-sub-mock'}[mode]);
-  if(ab)ab.style.cssText=_BS_A;
-  const rw=document.getElementById('be1s-region-wrap'); if(rw)rw.style.display=mode==='지역별'?'block':'none';
-  document.querySelectorAll('[id^="be1s-r-"]').forEach(b=>{if(b)b.style.cssText=_BR_I;});
-}
-function setBe1sRegion(region) {
-  _be1sRegion = region;
-  document.querySelectorAll('[id^="be1s-r-"]').forEach(b=>{if(b)b.style.cssText=_BR_I;});
-  const ab=document.getElementById('be1s-r-'+region); if(ab)ab.style.cssText=_BR_A;
-}
-function setBe1sSuneungMode(mode) {
-  _be1sSuneungMode = mode;
-  const ni=document.getElementById('be1s-smode-normal'); if(ni)ni.style.cssText=mode==='normal'?_BS_A:_BS_I;
-  const si=document.getElementById('be1s-smode-suneung'); if(si)si.style.cssText=mode==='suneung'?_BS_A:_BS_I;
+function updateBe1sDoktoogleBooks() {
+  _be1sDoktoogleBooks = Array.from(document.querySelectorAll('#be1s-doktoogle-wrap input[type=checkbox]:checked')).map(c=>c.value);
 }
 function setBe1sSubject(subj) {
   _be1sSubject = subj;
   document.querySelectorAll('[id^="be1s-subj-"]').forEach(b => { if(b.tagName==='BUTTON') b.style.cssText = _BSUB_I; });
   const ab = document.getElementById('be1s-subj-'+subj); if(ab) ab.style.cssText = _BSUB_A;
   const cw = document.getElementById('be1s-subject-custom'); if(cw) cw.style.display = subj === '기타' ? 'block' : 'none';
+  const dw = document.getElementById('be1s-doktoogle-wrap'); if(dw) dw.style.display = subj === '독토글' ? 'block' : 'none';
+  const sr = document.getElementById('be1s-scope-row'); if(sr) sr.style.display = subj === '독토글' ? 'none' : '';
   if(subj !== '기타') { _be1sSubjectCustomName = ''; _be1sSubjectCustomDesc = ''; }
+  if(subj !== '독토글') { _be1sDoktoogleBooks = []; document.querySelectorAll('#be1s-doktoogle-wrap input[type=checkbox]').forEach(c=>c.checked=false); }
 }
 document.addEventListener('DOMContentLoaded', () => {
   const ni = document.getElementById('be1s-sname-input'), di = document.getElementById('be1s-sdesc-input');
@@ -1950,59 +1932,33 @@ function makePromptRow(idx, codeName, note, dateStr, content, isNew) {
     <div style="background:rgba(108,99,255,.1);border:1px solid rgba(108,99,255,.25);border-radius:8px;padding:13px;margin-bottom:12px">
       <div style="font-size:12px;font-weight:700;color:#a78bfa;margin-bottom:10px">⚡ 맞춤 프롬프트 생성</div>
       <div style="display:flex;gap:5px;margin-bottom:7px">
-        <button id="be1s-cat-naesin" onclick="setBe1sCat('내신')" style="${_BC_I}">🏫 중학·고등 내신</button>
-        <button id="be1s-cat-suneung" onclick="setBe1sCat('수능')" style="${_BC_I}">🎯 수능</button>
-        <button id="be1s-cat-license" onclick="setBe1sCat('자격증')" style="${_BC_I}">📋 자격증</button>
+        <button id="be1s-cat-naesin" onclick="setBe1sCat('내신')" style="${_BC_A}">🏫 수학·독토글 내신</button>
+        <button onclick="alert('준비중입니다')" style="${_BC_I};opacity:.4;cursor:not-allowed">🎯 수능</button>
+        <button onclick="alert('준비중입니다')" style="${_BC_I};opacity:.4;cursor:not-allowed">📋 자격증</button>
       </div>
-      <div id="be1s-submode-wrap" style="display:none;gap:5px;flex-wrap:wrap;margin-bottom:7px">
-        <button id="be1s-sub-region" onclick="setBe1sSubMode('지역별')" style="${_BS_I}">🗺️ 지역별</button>
-        <button id="be1s-sub-diff" onclick="setBe1sSubMode('난이도유형별')" style="${_BS_I}">📊 난이도·유형별</button>
-        <button id="be1s-sub-mock" onclick="setBe1sSubMode('모의고사대비')" style="${_BS_I}">📝 모의고사 대비</button>
-      </div>
-      <div id="be1s-region-wrap" style="display:none;margin-bottom:7px">
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px">
-          <button id="be1s-r-서울" onclick="setBe1sRegion('서울')" style="${_BR_I}">서울</button>
-          <button id="be1s-r-경기" onclick="setBe1sRegion('경기')" style="${_BR_I}">경기</button>
-          <button id="be1s-r-인천" onclick="setBe1sRegion('인천')" style="${_BR_I}">인천</button>
-          <button id="be1s-r-강원" onclick="setBe1sRegion('강원')" style="${_BR_I}">강원</button>
-          <button id="be1s-r-충북" onclick="setBe1sRegion('충북')" style="${_BR_I}">충북</button>
-          <button id="be1s-r-충남·세종" onclick="setBe1sRegion('충남·세종')" style="${_BR_I}">충남·세종</button>
-          <button id="be1s-r-대전" onclick="setBe1sRegion('대전')" style="${_BR_I}">대전</button>
-          <button id="be1s-r-전북" onclick="setBe1sRegion('전북')" style="${_BR_I}">전북</button>
-          <button id="be1s-r-전남" onclick="setBe1sRegion('전남')" style="${_BR_I}">전남</button>
-          <button id="be1s-r-광주" onclick="setBe1sRegion('광주')" style="${_BR_I}">광주</button>
-          <button id="be1s-r-경북" onclick="setBe1sRegion('경북')" style="${_BR_I}">경북</button>
-          <button id="be1s-r-대구" onclick="setBe1sRegion('대구')" style="${_BR_I}">대구</button>
-          <button id="be1s-r-경남" onclick="setBe1sRegion('경남')" style="${_BR_I}">경남</button>
-          <button id="be1s-r-부산" onclick="setBe1sRegion('부산')" style="${_BR_I}">부산</button>
-          <button id="be1s-r-울산" onclick="setBe1sRegion('울산')" style="${_BR_I}">울산</button>
-          <button id="be1s-r-제주" onclick="setBe1sRegion('제주')" style="${_BR_I}">제주</button>
-        </div>
-      </div>
-      <div id="be1s-suneung-wrap" style="display:none;flex-direction:column;gap:6px;margin-bottom:7px">
-        <select id="be1s-sdiff" style="background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:7px 8px;color:var(--text);font-size:12px">
-          <option value="수능-쉬움">🟢 수능-쉬움 (기초 확인)</option>
-          <option value="수능-중간" selected>🔵 수능-중간 (준킬러)</option>
-          <option value="수능-어려움">🔴 수능-어려움 (킬러)</option>
-        </select>
-        <div style="display:flex;gap:5px">
-          <button id="be1s-smode-normal" onclick="setBe1sSuneungMode('normal')" style="${_BS_A}">📝 일반</button>
-          <button id="be1s-smode-suneung" onclick="setBe1sSuneungMode('suneung')" style="${_BS_I}">🎯 수능</button>
-        </div>
-      </div>
-      <div id="be1s-subject-wrap" style="display:none;margin-bottom:7px">
+      <div id="be1s-subject-wrap" style="margin-bottom:7px">
         <div style="font-size:10px;color:rgba(255,255,255,.4);font-weight:600;margin-bottom:4px">과목 선택</div>
         <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px">
-          <button id="be1s-subj-국어" onclick="setBe1sSubject('국어')" style="${_BSUB_I}">📖<br>국어</button>
+          <button onclick="alert('준비중입니다')" style="${_BSUB_I};opacity:.35;cursor:not-allowed">📖<br>국어</button>
           <button id="be1s-subj-수학" onclick="setBe1sSubject('수학')" style="${_BSUB_I}">📐<br>수학</button>
-          <button id="be1s-subj-영어" onclick="setBe1sSubject('영어')" style="${_BSUB_I}">🔤<br>영어</button>
-          <button id="be1s-subj-역사" onclick="setBe1sSubject('역사')" style="${_BSUB_I}">🏛️<br>한국사</button>
-          <button id="be1s-subj-사회" onclick="setBe1sSubject('사회')" style="${_BSUB_I}">🌏<br>사회</button>
-          <button id="be1s-subj-과학" onclick="setBe1sSubject('과학')" style="${_BSUB_I}">🔬<br>과학</button>
-          <button id="be1s-subj-기술가정" onclick="setBe1sSubject('기술가정')" style="${_BSUB_I}">🔧<br>기술가정</button>
-          <button id="be1s-subj-도덕" onclick="setBe1sSubject('도덕')" style="${_BSUB_I}">⚖️<br>도덕·윤리</button>
-          <button id="be1s-subj-정보" onclick="setBe1sSubject('정보')" style="${_BSUB_I}">💻<br>정보</button>
-          <button id="be1s-subj-기타" onclick="setBe1sSubject('기타')" style="${_BSUB_I}">✏️<br>기타</button>
+          <button onclick="alert('준비중입니다')" style="${_BSUB_I};opacity:.35;cursor:not-allowed">🔤<br>영어</button>
+          <button onclick="alert('준비중입니다')" style="${_BSUB_I};opacity:.35;cursor:not-allowed">🏛️<br>한국사</button>
+          <button onclick="alert('준비중입니다')" style="${_BSUB_I};opacity:.35;cursor:not-allowed">🌏<br>사회</button>
+          <button onclick="alert('준비중입니다')" style="${_BSUB_I};opacity:.35;cursor:not-allowed">🔬<br>과학</button>
+          <button onclick="alert('준비중입니다')" style="${_BSUB_I};opacity:.35;cursor:not-allowed">🔧<br>기술가정</button>
+          <button onclick="alert('준비중입니다')" style="${_BSUB_I};opacity:.35;cursor:not-allowed">⚖️<br>도덕·윤리</button>
+          <button onclick="alert('준비중입니다')" style="${_BSUB_I};opacity:.35;cursor:not-allowed">💻<br>정보</button>
+          <button id="be1s-subj-독토글" onclick="setBe1sSubject('독토글')" style="${_BSUB_I}">📚<br>독토글</button>
+        </div>
+        <div id="be1s-doktoogle-wrap" style="display:none;margin-top:6px">
+          <div style="font-size:10px;color:rgba(255,255,255,.4);font-weight:600;margin-bottom:4px">책 선택 (복수 선택 가능)</div>
+          <div style="display:flex;flex-direction:column;gap:3px">
+            <label style="display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);font-size:11px;cursor:pointer"><input type="checkbox" value="마당을 나온 암탉" onchange="updateBe1sDoktoogleBooks()" style="accent-color:#6c63ff"> 마당을 나온 암탉</label>
+            <label style="display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);font-size:11px;cursor:pointer"><input type="checkbox" value="어린왕자" onchange="updateBe1sDoktoogleBooks()" style="accent-color:#6c63ff"> 어린왕자</label>
+            <label style="display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);font-size:11px;cursor:pointer"><input type="checkbox" value="책만 보는 바보" onchange="updateBe1sDoktoogleBooks()" style="accent-color:#6c63ff"> 책만 보는 바보</label>
+            <label style="display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);font-size:11px;cursor:pointer"><input type="checkbox" value="스키너의 심리 상자 열기" onchange="updateBe1sDoktoogleBooks()" style="accent-color:#6c63ff"> 스키너의 심리 상자 열기</label>
+            <label style="display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);font-size:11px;cursor:pointer"><input type="checkbox" value="정의란 무엇인가" onchange="updateBe1sDoktoogleBooks()" style="accent-color:#6c63ff"> 정의란 무엇인가</label>
+          </div>
         </div>
         <div id="be1s-subject-custom" style="display:none;margin-top:6px">
           <input id="be1s-sname-input" placeholder="과목명 (예: 체육, 음악...)" style="width:100%;background:var(--surface3);border:1px solid var(--border2);border-radius:6px;padding:6px 8px;color:var(--text);font-size:11px;margin-bottom:4px;box-sizing:border-box">
@@ -2048,14 +2004,15 @@ function makePromptRow(idx, codeName, note, dateStr, content, isNew) {
 }
 
 function copyBe1sPrompt() {
-  const isSuneung = _be1sCat === '수능';
-  const scope = isSuneung ? '수능 모의고사' : (document.getElementById('be1s-scope')?.value.trim() || '');
-  if (!isSuneung && !scope) { alert('시험 범위를 입력하세요'); return; }
-  const diff = isSuneung
-    ? (document.getElementById('be1s-sdiff')?.value || '수능-중간')
-    : (document.getElementById('be1s-diff')?.value || '기본');
-  const curriculum = isSuneung ? '2022개정' : (document.getElementById('be1s-curriculum')?.value || '2022개정');
-  const grade = isSuneung ? '고3' : (document.getElementById('be1s-grade')?.value || '고1');
+  const isDoktoogle = _be1sSubject === '독토글';
+  if (isDoktoogle && (!_be1sDoktoogleBooks || _be1sDoktoogleBooks.length === 0)) { alert('책을 1권 이상 선택하세요'); return; }
+  const scope = isDoktoogle
+    ? ('독토글: ' + _be1sDoktoogleBooks.join(', '))
+    : (document.getElementById('be1s-scope')?.value.trim() || '');
+  if (!isDoktoogle && !scope) { alert('시험 범위를 입력하세요'); return; }
+  const diff = document.getElementById('be1s-diff')?.value || '기본';
+  const curriculum = document.getElementById('be1s-curriculum')?.value || '2022개정';
+  const grade = document.getElementById('be1s-grade')?.value || '고1';
   const p = buildByteexam1sPrompt(
     scope,
     diff,
@@ -2064,9 +2021,9 @@ function copyBe1sPrompt() {
     curriculum,
     grade,
     _be1sCat,
-    _be1sSubMode,
-    _be1sRegion,
-    isSuneung && _be1sSuneungMode === 'suneung'
+    '',
+    '',
+    false
   );
   navigator.clipboard.writeText(p).then(()=>{
     const s = document.getElementById('be1s-status');
