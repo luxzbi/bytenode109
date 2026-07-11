@@ -1339,20 +1339,98 @@ const BE1S_SUBJECT_SPEC = {
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ▶ 수식 표현 원칙:
   - 모든 수학 기호·수식은 KaTeX 필수: 인라인 $수식$, 블록 $$수식$$
-  - 분수: $\\frac{a}{b}$ / 제곱근: $\\sqrt{x}$ / 적분: $\\int_a^b f(x)dx$ / 극한: $\\lim_{x\\to\\infty}$
-  - 수능 단답형 문제 포함 시: "답은 자연수(0~999 정수)로 구하시오." 발문
+  - 분수: $\\frac{a}{b}$ / 제곱근: $\\sqrt{x}$ / 적분: $\\int_a^b f(x)\\,dx$ / 극한: $\\lim_{x\\to a}$
+  - 벡터: $\\vec{AB}$, $\\overrightarrow{AB}$ / 절댓값: $|x|$ / 집합: $\\{1,2,3\\}$
 
-▶ 그래프·좌표 삽입:
-  - 함수 그래프 필요 시 [COORD:] 태그 활용 (좌표 명시)
-  - 또는 발문 내 "그래프를 참고하여" + 조건 텍스트로 그래프 묘사 가능
+▶ 도형·그래프 출제 원칙 (시중 문제집 수준 동일):
+  문제에 그림이 필요한 경우 반드시 [COORD:] 또는 [FIGURE:] 태그로 실제 그림을 그려라.
+  "그림 생략" 또는 텍스트 설명만으로 도형 대체 금지.
 
-▶ 표 삽입: [TABLE:헤더1|헤더2\n값1|값2] 형식 (확률분포표·수열 등)
+■ [COORD:xmin,xmax,ymin,ymax,w,h;요소;...] — 좌표평면 위 그래프/도형
+  사용 가능 요소:
+  pt(x,y,라벨)              점         예) pt(2,3,A)
+  open_pt(x,y,라벨)         열린 점     예) open_pt(2,0,B)
+  line(x1,y1,x2,y2)        선분        예) line(0,0,3,4)
+  dline(x1,y1,x2,y2)       점선        예) dline(2,0,2,3)
+  ray(x1,y1,x2,y2)         반직선      예) ray(0,0,4,2)
+  vector(x1,y1,x2,y2)      벡터 화살표  예) vector(0,0,3,2)
+  circle(cx,cy,r)           원          예) circle(0,0,3)
+  ellipse(cx,cy,rx,ry)      타원        예) ellipse(0,0,3,2)
+  hyperbola_x(a,b,x0,x1)   좌우 쌍곡선  예) hyperbola_x(2,1,-5,5)
+  hyperbola_y(a,b,y0,y1)   상하 쌍곡선  예) hyperbola_y(2,1,-5,5)
+  parabola(a,b,c,x0,x1)    이차 포물선  예) parabola(1,0,-4,-3,3)
+  cubic(a,b,c,d,x0,x1)     삼차 함수    예) cubic(1,0,-3,0,-3,3)
+  trig(sin,A,B,C,D,x0,x1)  삼각함수    예) trig(sin,1,1,0,0,-7,7)
+  trig(cos,A,B,C,D,x0,x1)  코사인       예) trig(cos,2,1,0,0,-7,7)
+  curve(x1,y1,x2,y2,...)   꺾은선 곡선  예) curve(-2,4,0,0,2,4)
+  poly(x1,y1,x2,y2,...)    다각형       예) poly(-2,0,2,0,0,3)
+  fill_poly(x1,y1,...)      색칠 다각형
+  angle(cx,cy,r,d1,d2)     각도 호 표시 예) angle(0,0,0.5,0,90)
+  asymptote(기울기,절편,x0,x1) 점근선   예) asymptote(0.5,0,-5,5)
+  label(x,y,텍스트)         라벨        예) label(1.5,1,f(x))
+
+■ [FIGURE:w,h;요소;...] — 좌표계 없이 기하 도형만 (픽셀 좌표)
+  사용 가능 요소:
+  poly(x1,y1,x2,y2,...)    다각형 (삼각형, 사각형 등)
+  fill_poly(...)             색칠 다각형
+  circle(cx,cy,r)           원·외접원·내접원
+  ellipse(cx,cy,rx,ry)      타원
+  arc(cx,cy,r,d1,d2)        호
+  line(x1,y1,x2,y2)        선분 (수선, 중선 등)
+  dline(x1,y1,x2,y2)       점선 (연장선)
+  right_angle(x,y,크기,각도) 직각 기호
+  tick(x,y,각도,n)          변 길이 같음 표시 (n=1단,2이중,3삼중)
+  vector(x1,y1,x2,y2)      벡터 화살표
+  pt(x,y,라벨)              점
+  label(x,y,텍스트)         텍스트 라벨
+
+▶ 단원별 필수 도형 출제 지침:
+
+【이차함수·이차방정식】
+  - 포물선: parabola(a,b,c,x0,x1)
+  - 꼭짓점·축: pt(꼭짓점) + dline(수직선)
+  예) [COORD:xmin=-4,xmax=4,ymin=-5,ymax=5,w=220,h=220;parabola(1,0,-3,-3,3);pt(0,-3,꼭짓점);dline(0,-5,0,-3)]
+
+【원의 방정식·원과 직선】
+  - 원+접선: circle()+line()
+  - 두 원의 위치관계: circle()+circle()+pt(교점)
+  예) [COORD:xmin=-5,xmax=5,ymin=-5,ymax=5,w=220,h=220;circle(0,0,3);circle(4,0,1);pt(3,0,접점)]
+
+【삼각형 기하 (FIGURE 사용)】
+  - 일반삼각형: poly(3꼭짓점)
+  - 직각삼각형: poly()+right_angle(직각꼭짓점,크기,각도)
+  - 외접원: poly()+circle(외심)
+  - 내접원: poly()+circle(내심)
+  - 변 길이 같음: tick(변 중점,변 방향 각도,n)
+  예) [FIGURE:w=200,h=180;poly(100,20,180,160,20,160);right_angle(20,160,10,0);label(100,12,A);label(185,165,B);label(10,165,C)]
+
+【타원·쌍곡선 (공통수학2)】
+  - 타원: ellipse(cx,cy,rx,ry) + pt(초점F1) + pt(초점F2)
+  - 좌우 쌍곡선: hyperbola_x(a,b,x0,x1) + asymptote()
+  - 상하 쌍곡선: hyperbola_y(a,b,y0,y1) + asymptote()
+  예) [COORD:xmin=-5,xmax=5,ymin=-4,ymax=4,w=220,h=200;ellipse(0,0,3,2);pt(-2.24,0,F₁);pt(2.24,0,F₂)]
+  예) [COORD:xmin=-6,xmax=6,ymin=-5,ymax=5,w=240,h=200;hyperbola_x(2,1.5,-6,6);asymptote(0.75,0,-6,6);asymptote(-0.75,0,-6,6)]
+
+【삼각함수 그래프】
+  - trig(sin,A,B,C,D,x0,x1): y=A*sin(Bx+C)+D
+  - trig(cos,A,B,C,D,x0,x1): y=A*cos(Bx+C)+D
+  예) [COORD:xmin=-7,xmax=7,ymin=-3,ymax=3,w=300,h=200;trig(sin,2,1,0,0,-7,7)]
+
+【벡터】
+  - vector(x1,y1,x2,y2): 시점→종점 화살표
+  예) [COORD:xmin=-1,xmax=5,ymin=-1,ymax=4,w=200,h=180;vector(0,0,3,1);vector(0,0,1,3);label(1.5,0.2,a);label(0.2,1.5,b)]
+
+【수열·확률분포 표】
+  - [TABLE:$n$|1|2|3|4|5\\n$a_n$|2|5|8|11|14]
+
+▶ 표 삽입: [TABLE:헤더1|헤더2\\n값1|값2] (함수값표, 확률분포표, 수열 등)
 
 ▶ 서술형·증명형:
-  - 단계별 풀이 과정 서술 필수 (explain= 필드에 표준 풀이·부분점수 기준)
-  - 증명형: "풀이 과정을 서술하시오" 발문
+  - explain= 필드에 단계별 풀이·부분점수 기준 명시
 
-⚠️ 수식 없이 텍스트만으로 수학적 표현하는 것 금지.
+⚠️ 수식 없이 텍스트만으로 수학적 표현 금지.
+⚠️ 도형·그래프 필요 문제에서 [COORD:] 또는 [FIGURE:] 생략 금지.
+⚠️ 타원·쌍곡선 문제에서 초점 위치 반드시 pt()로 표시.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 </subject_directive>`,
 
