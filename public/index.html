@@ -795,9 +795,71 @@ async function myboxDelete(id) {
 }
 
 const BUILTIN_PROMPTS = [
-  { tier:'2',  codeName:'bytenode 2',     date:'2026-07-16', note:'블로그 글쓰기', getContent:()=>AI_PROMPT },
-  { tier:'2e', codeName:'bytegraphic 2e', date:'2026-07-16', note:'인포그래픽 카드', getContent:()=>FLASHINFO_PROMPT },
-  { tier:'2e', codeName:'bytenode-ppt 2e',date:'2026-07-16', note:'프레젠테이션', getContent:()=>FLASHPPT_PROMPT },
+  { tier:'2',  codeName:'bytenode 2',     date:'2026-07-16', note:'블로그 글쓰기', getContent:()=>`bytenode 2 — 릴리즈 노트
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+릴리즈 일자  : 2026-07-16
+이전 버전    : bytenode 1
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+【개선 사항】
+┌───────────────────────────────────────────────┐
+│ 기능              │ 1         │ 2             │
+├───────────────────────────────────────────────┤
+│ 내용 및 요청사항  │ 없음      │ 새 글 쓰기에  │
+│                   │           │ 항목 추가     │
+│ 커버 이미지       │ URL 입력  │ 파일 업로드   │
+│ AI 프롬프트       │ 프롬프트만│ 제목+요청사항 │
+│                   │           │ 자동 포함     │
+│ AI 사고 모드 안내 │ 없음      │ 복사 시 안내  │
+└───────────────────────────────────────────────┘
+
+【새 글 쓰기 개선 (2 신규)】
+  제목·요청사항 → AI 프롬프트에 자동 반영
+  커버 이미지: URL 직접 입력 → 파일 업로드 버튼으로 변경
+  AI 복사 시 사고 모드(Pro) 전환 안내 자동 포함` },
+  { tier:'2e', codeName:'bytegraphic 2e', date:'2026-07-16', note:'인포그래픽 카드', getContent:()=>`bytegraphic 2e — 릴리즈 노트
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+릴리즈 일자  : 2026-07-16
+이전 버전    : bytegraphic 1e
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+【개선 사항】
+┌───────────────────────────────────────────────┐
+│ 기능              │ 1e        │ 2e            │
+├───────────────────────────────────────────────┤
+│ 내용 및 요청사항  │ 없음      │ 새 글 쓰기에  │
+│                   │           │ 항목 추가     │
+│ 커버 이미지       │ URL 입력  │ 파일 업로드   │
+│ AI 프롬프트       │ 프롬프트만│ 제목+요청사항 │
+│                   │           │ 자동 포함     │
+│ AI 사고 모드 안내 │ 없음      │ 복사 시 안내  │
+└───────────────────────────────────────────────┘
+
+【인포그래픽 DSL 지원 태그】
+  <stat:>, <piechart:>, <barchart:>, <infotile:>
+  <timeline:>, <compare:>, <h1:>, <text:>, <img:>` },
+  { tier:'2e', codeName:'bytenode-ppt 2e',date:'2026-07-16', note:'프레젠테이션', getContent:()=>`bytenode-ppt 2e — 릴리즈 노트
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+릴리즈 일자  : 2026-07-16
+이전 버전    : bytenode-ppt 1e
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+【개선 사항】
+┌───────────────────────────────────────────────┐
+│ 기능              │ 1e        │ 2e            │
+├───────────────────────────────────────────────┤
+│ 내용 및 요청사항  │ 없음      │ 새 글 쓰기에  │
+│                   │           │ 항목 추가     │
+│ 커버 이미지       │ URL 입력  │ 파일 업로드   │
+│ AI 프롬프트       │ 프롬프트만│ 제목+요청사항 │
+│                   │           │ 자동 포함     │
+│ AI 사고 모드 안내 │ 없음      │ 복사 시 안내  │
+└───────────────────────────────────────────────┘
+
+【PPT DSL 지원 태그】
+  <slidecover:>, <slide:>, <slidenote:>
+  <partition:>, <freebox:>, <gradtext:>, <gradbox:>
+  <stat:>, <svg-asset:> ... <endsvg>, <meshbg:>` },
   { tier:'1',  codeName:'bytenode 1',                date:'2026-05-08', note:'기본 블로그 글쓰기', getContent:()=>AI_PROMPT },
   { tier:'2s', codeName:'byteexam 2.1s',             date:'2026-07-16', note:'AI 프롬포트로 기출문제 생성', getContent:()=>`byteexam 2.1s — 릴리즈 노트
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -2149,8 +2211,8 @@ function makePromptRow(idx, codeName, note, dateStr, content, isNew) {
         💡 붙여넣기 전, AI의 <strong>사고 모드(잘 생각하기)</strong> 또는 <strong>Pro 모드</strong>로 전환하는 것을 권장합니다.
       </div>
     </div>` : '';
-  // byteexam 버전은 changelog 형식으로 렌더링
-  const isByteexamVer = codeName.startsWith('byteexam ');
+  // changelog 형식으로 렌더링할 버전 목록
+  const isByteexamVer = codeName.startsWith('byteexam ') || ['bytenode 2','bytegraphic 2e','bytenode-ppt 2e'].includes(codeName);
   function buildChangelog(text) {
     return `<div style="padding:4px 0 8px">` +
       text.split('\n').map(line => {
