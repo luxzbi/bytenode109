@@ -632,7 +632,7 @@ function logout() { token=null; me=null; localStorage.removeItem('bn_token'); lo
 ════════════════════════════════════════ */
 function showWriteModal() {
   const MODES = [
-    { id:'bytenode',         emoji:'📝', name:'bytenode 2e',                desc:'기본 블로그 글쓰기' },
+    { id:'bytenode',         emoji:'📝', name:'bytenode 2',                 desc:'기본 블로그 글쓰기' },
     { id:'byteexam',         emoji:'📋', name:'byteexam 2.1s',             desc:'AI 프롬포트로 기출문제 생성', accent:true },
     { id:'flashinfo',        emoji:'📊', name:'bytegraphic 2e',            desc:'인포그래픽·데이터 시각화' },
     { id:'flashppt',         emoji:'🎞️', name:'bytenode-ppt 2e',           desc:'프레젠테이션 슬라이드' },
@@ -795,7 +795,7 @@ async function myboxDelete(id) {
 }
 
 const BUILTIN_PROMPTS = [
-  { tier:'2e', codeName:'bytenode 2e',    date:'2026-07-16', note:'블로그 글쓰기', getContent:()=>AI_PROMPT },
+  { tier:'2',  codeName:'bytenode 2',     date:'2026-07-16', note:'블로그 글쓰기', getContent:()=>AI_PROMPT },
   { tier:'2e', codeName:'bytegraphic 2e', date:'2026-07-16', note:'인포그래픽 카드', getContent:()=>FLASHINFO_PROMPT },
   { tier:'2e', codeName:'bytenode-ppt 2e',date:'2026-07-16', note:'프레젠테이션', getContent:()=>FLASHPPT_PROMPT },
   { tier:'1',  codeName:'bytenode 1',                date:'2026-05-08', note:'기본 블로그 글쓰기', getContent:()=>AI_PROMPT },
@@ -2254,6 +2254,7 @@ async function renderPrompts(app) {
     const tiers = [
       { key:'2s', label:'2s', color:'#c084fc', bg:'rgba(192,132,252,.12)', border:'rgba(192,132,252,.35)' },
       { key:'2e', label:'2e', color:'#38bdf8', bg:'rgba(56,189,248,.12)',  border:'rgba(56,189,248,.35)'  },
+      { key:'2',  label:'2',  color:'var(--muted)', bg:'rgba(255,255,255,.03)', border:'var(--border)' },
       { key:'1s', label:'1s', color:'#a78bfa', bg:'rgba(139,92,246,.12)', border:'rgba(139,92,246,.35)' },
       { key:'1e', label:'1e', color:'#60a5fa', bg:'rgba(96,165,250,.08)', border:'rgba(96,165,250,.25)' },
       { key:'1',  label:'1',  color:'var(--muted)', bg:'rgba(255,255,255,.03)', border:'var(--border)' },
@@ -2655,7 +2656,7 @@ async function renderWrite(app, editId) {
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
       <h2 style="font-size:1.3rem;margin:0">${editId?'글 수정':'새 글 작성'}</h2>
       <select id="modeSel" onchange="setEditorMode(this.value)" style="font-size:12px;padding:5px 10px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:8px;cursor:pointer">
-        <option value="bytenode">bytenode 2e</option>
+        <option value="bytenode">bytenode 2</option>
         <option value="flashinfo">bytegraphic 2e</option>
         <option value="flashppt">bytenode-ppt 2e</option>
       </select>
@@ -3596,7 +3597,7 @@ async function adminBanFromReport(username) {
 async function adminPrompts(el) {
   try {
     const list = await api('GET','/prompts');
-    const CODES = ['byteexam 2.1s','byteexam 2s','byteexam 1s','byteexam 1e','bytenode 2e','bytegraphic 2e','bytenode-ppt 2e'];
+    const CODES = ['byteexam 2.1s','byteexam 2s','byteexam 1s','byteexam 1e','bytenode 2','bytegraphic 2e','bytenode-ppt 2e'];
     el.innerHTML = `
     <div class="admin-title">프롬프트 관리 <span style="font-size:13px;color:var(--muted)">(${list.length}개)</span></div>
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:24px">
