@@ -2463,6 +2463,7 @@ async function renderPost(app, id) {
           <button class="btn" id="dlPdfBtn" title="PDF 다운로드" style="font-size:12px">⬇ PDF</button>
           <button class="btn" id="dlPptxBtn" style="font-size:12px;background:rgba(100,180,255,.12);border-color:rgba(100,180,255,.3)">⬇ PPTX</button>
           ${p.ratio==='16:9'?`<button class="btn" id="presentBtn" style="font-size:12px;background:rgba(168,85,247,.12);border-color:rgba(168,85,247,.3)">▶ 발표</button>`:''}
+          ${!p.isPrivate?`<button class="btn" id="shareBtn" style="font-size:12px;background:rgba(56,189,248,.1);border-color:rgba(56,189,248,.3);color:#38bdf8" onclick="sharePost('${p.id}')">🔗 공유</button>`:''}
           ${canEdit?`<button class="btn" onclick="showPage('write','${p.id}')">수정</button>
           <button class="btn danger" onclick="deletePost('${p.id}')">삭제</button>`:''}
           ${me&&!canEdit?`<button class="btn" style="font-size:12px;background:rgba(239,68,68,.1);color:#f87171;border-color:rgba(239,68,68,.3)" onclick="reportPost('${p.id}','${p.authorId}')">🚩 신고</button>`:''}
@@ -2643,6 +2644,20 @@ function setVisibility(isPrivate) {
 async function deletePost(id) {
   if (!confirm('정말 삭제하시겠습니까?')) return;
   try { await api('DELETE',`/posts/${id}`); showPage('home'); } catch(e) { alert(e.message); }
+}
+
+function sharePost(id) {
+  const url = `${location.origin}${location.pathname}?p=${id}`;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('shareBtn');
+    if (!btn) return;
+    const orig = btn.textContent;
+    btn.textContent = '✅ 복사됨!';
+    btn.style.background = 'rgba(52,211,153,.15)';
+    btn.style.borderColor = 'rgba(52,211,153,.3)';
+    btn.style.color = '#34d399';
+    setTimeout(() => { btn.textContent = orig; btn.style.background = ''; btn.style.borderColor = ''; btn.style.color = ''; }, 2000);
+  }).catch(() => { prompt('링크를 복사하세요:', url); });
 }
 async function reportPost(postId, authorId) {
   const reason = prompt('신고 사유를 입력해주세요:');
@@ -8707,7 +8722,10 @@ function timeAgo(ts) {
    INIT
 ════════════════════════════════════════ */
 renderHeader();
-showPage('home');
+// ?p=<postId> 공유 링크 처리
+const _urlPost = new URLSearchParams(location.search).get('p');
+if (_urlPost) showPage('post', _urlPost);
+else showPage('home');
 loadBanner();
 
 // 로그인 유지 확인
