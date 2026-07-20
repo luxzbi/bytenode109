@@ -439,7 +439,7 @@ async function adminOnly(req, res, next) {
 }
 function mapUser(id, d) {
   if (!d) return null;
-  return { id, _id: id, username: d.username, displayName: d.displayName||'', pw: d.pw, isAdmin: d.isAdmin||false, bio: d.bio||'', avatar: d.avatar||'', banned: d.banned||false, bannedReason: d.bannedReason||'', createdAt: d.createdAt };
+  return { id, _id: id, username: d.username, displayName: d.displayName||'', pw: d.pw, isAdmin: d.isAdmin||false, bio: d.bio||'', avatar: d.avatar||'', banned: d.banned||false, bannedReason: d.bannedReason||'', accountType: d.accountType||'', createdAt: d.createdAt };
 }
 
 /* ══ AUTH ══ */
@@ -457,14 +457,35 @@ app.post('/api/auth/register', async (req, res) => {
     const id = uuid();
     await db.collection('users').doc(id).set({ username, displayName, pw: hashed, isAdmin: false, bio: '', avatar: '', banned: false, bannedReason: '', createdAt: Date.now() });
     const token = jwt.sign({ id, username, displayName, isAdmin: false }, JWT_SECRET, { expiresIn: '30d' });
-    res.json({ token, user: { id, username, displayName, isAdmin: false, bio: '', avatar: '' } });
+    res.json({ token, user: { id, username, displayName, isAdmin: false, bio: '', avatar: '', accountType: '' } });
   } catch(e) { console.error('[register]', e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
+
+/* 계정별 로그인 시도 제한 (Firestore 기반 → 서버리스 다중 인스턴스에서도 유효).
+   IP가 아닌 username 기준이라 SSO 프록시로 IP가 뭉쳐도, 분산 공격이어도 방어됨. */
+const LOGIN_MAX = 8, LOGIN_WINDOW = 15 * 60 * 1000;
+async function loginThrottle(username) {
+  const ref = db.collection('loginAttempts').doc(String(username).toLowerCase().slice(0, 60));
+  return db.runTransaction(async tx => {
+    const doc = await tx.get(ref);
+    const now = Date.now();
+    let d = doc.exists ? doc.data() : { count: 0, first: now };
+    if (now - d.first > LOGIN_WINDOW) d = { count: 0, first: now };  /* 창 만료 → 리셋 */
+    if (d.count >= LOGIN_MAX) return { blocked: true, retryMs: LOGIN_WINDOW - (now - d.first) };
+    tx.set(ref, { count: d.count + 1, first: d.first });
+    return { blocked: false };
+  });
+}
+async function loginReset(username) {
+  try { await db.collection('loginAttempts').doc(String(username).toLowerCase().slice(0, 60)).delete(); } catch {}
+}
 
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { username, password } = req.body;
     if (!username||!password) return res.status(400).json({ error: '아이디와 비밀번호를 입력하세요.' });
+    const gate = await loginThrottle(username);
+    if (gate.blocked) return res.status(429).json({ error: `로그인 시도가 너무 많습니다. ${Math.ceil(gate.retryMs/60000)}분 후 다시 시도하세요.` });
     const snap = await db.collection('users').where('username', '==', username).limit(1).get();
     if (snap.empty) return res.status(401).json({ error: '아이디 또는 비밀번호가 틀렸습니다.' });
     const docSnap = snap.docs[0];
@@ -472,8 +493,9 @@ app.post('/api/auth/login', async (req, res) => {
     const ok = await bcrypt.compare(password, user.pw);
     if (!ok) return res.status(401).json({ error: '아이디 또는 비밀번호가 틀렸습니다.' });
     if (user.banned) return res.status(403).json({ error: '정지된 계정입니다.', banned: true, bannedReason: user.bannedReason||'관리자에 의해 정지됨' });
+    await loginReset(username);   /* 성공 시 시도 카운터 초기화 */
     const token = jwt.sign({ id: user.id, username: user.username, displayName: user.displayName, isAdmin: user.isAdmin }, JWT_SECRET, { expiresIn: '30d' });
-    res.json({ token, user: { id: user.id, username: user.username, displayName: user.displayName, isAdmin: user.isAdmin, bio: user.bio, avatar: user.avatar } });
+    res.json({ token, user: { id: user.id, username: user.username, displayName: user.displayName, isAdmin: user.isAdmin, bio: user.bio, avatar: user.avatar, accountType: user.accountType } });
   } catch(e) { console.error('[login]', e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
@@ -482,7 +504,7 @@ app.get('/api/auth/me', auth, async (req, res) => {
     const doc = await db.collection('users').doc(req.user.id).get();
     if (!doc.exists) return res.status(404).json({ error: '유저를 찾을 수 없습니다.' });
     const u = mapUser(doc.id, doc.data());
-    res.json({ id: u.id, username: u.username, displayName: u.displayName, isAdmin: u.isAdmin, bio: u.bio, avatar: u.avatar });
+    res.json({ id: u.id, username: u.username, displayName: u.displayName, isAdmin: u.isAdmin, bio: u.bio, avatar: u.avatar, accountType: u.accountType });
   } catch(e) { res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
@@ -794,10 +816,23 @@ app.get('/api/admin/users', auth, adminOnly, async (req, res) => {
         db.collection('qf_exams').where('userId','==',d.id).get(),
         db.collection('be_exams').where('userId','==',d.id).get()
       ]);
-      return { id: d.id, username: u.username, displayName: u.displayName, isAdmin: u.isAdmin||false, banned: u.banned||false, bannedReason: u.bannedReason||'', createdAt: u.createdAt, postCount: pSnap.size, examCount: eSnap.size, beExamCount: beSnap.size };
+      return { id: d.id, username: u.username, displayName: u.displayName, isAdmin: u.isAdmin||false, banned: u.banned||false, bannedReason: u.bannedReason||'', accountType: u.accountType||'', createdAt: u.createdAt, postCount: pSnap.size, examCount: eSnap.size, beExamCount: beSnap.size };
     }));
     res.json(result);
   } catch(e) { console.error('[admin/users]', e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
+});
+
+/* 계정 유형 분류: '' | 'class'(학급특색사업) | 'scivill'(동아리) */
+app.post('/api/admin/account-type', auth, adminOnly, async (req, res) => {
+  try {
+    const { id, type } = req.body || {};
+    if (!id) return res.status(400).json({ error: '대상 ID 필요' });
+    if (!['', 'class', 'scivill'].includes(type)) return res.status(400).json({ error: '유형은 class, scivill 또는 빈 값이어야 합니다.' });
+    const doc = await db.collection('users').doc(id).get();
+    if (!doc.exists) return res.status(404).json({ error: '유저 없음' });
+    await db.collection('users').doc(id).update({ accountType: type });
+    res.json({ ok: true });
+  } catch(e) { console.error('[account-type]', e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
 app.post('/api/admin/ban', auth, adminOnly, async (req, res) => {
@@ -1225,6 +1260,125 @@ app.post('/api/chatbot/ai', async (req, res) => {
     const reply = data.choices?.[0]?.message?.content || '죄송합니다, 응답을 생성할 수 없었습니다.';
     res.json({ reply });
   } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+/* ══ OAuth 클라이언트 (bytenode-account 개발자 콘솔용) ══ */
+const nodeCrypto = require('crypto');
+const sha256 = s => nodeCrypto.createHash('sha256').update(s).digest('hex');
+/* 전체 redirect URI 허용 (경로·쿼리 포함 가능, http/https만) */
+const validRedirectUri = v => { try { const u = new URL(v); return u.protocol === 'https:' || u.protocol === 'http:'; } catch { return false; } };
+
+app.post('/api/oauth/clients', auth, async (req, res) => {
+  try {
+    const { name, origins, uris } = req.body || {};
+    const nm = String(name || '').trim();
+    if (!nm || nm.length > 40) return res.status(400).json({ error: '앱 이름은 1~40자여야 합니다.' });
+    const raw = Array.isArray(uris) ? uris : (Array.isArray(origins) ? origins : []);
+    const list = raw.map(o => String(o).trim().replace(/\/+$/, '')).filter(Boolean);
+    if (!list.length || list.length > 10) return res.status(400).json({ error: 'redirect URI는 1~10개 등록해야 합니다.' });
+    for (const o of list) if (!validRedirectUri(o)) return res.status(400).json({ error: `잘못된 redirect URI: ${o} (http/https 주소여야 합니다)` });
+    const mine = await db.collection('oauthClients').where('ownerId', '==', req.user.id).get();
+    if (mine.size >= 10) return res.status(400).json({ error: '앱은 계정당 최대 10개까지 등록할 수 있습니다.' });
+    const clientId = 'bn_' + nodeCrypto.randomBytes(8).toString('hex');
+    const secret = 'sk_' + nodeCrypto.randomBytes(24).toString('hex');
+    await db.collection('oauthClients').doc(clientId).set({
+      name: nm, redirectUris: list, ownerId: req.user.id, ownerName: req.user.username,
+      secretHash: sha256(secret), createdAt: Date.now()
+    });
+    res.status(201).json({ clientId, clientSecret: secret, name: nm, redirectUris: list });
+  } catch (e) { console.error('[oauth create]', e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
+});
+
+app.get('/api/oauth/clients', auth, async (req, res) => {
+  try {
+    const snap = await db.collection('oauthClients').where('ownerId', '==', req.user.id).get();
+    res.json(snap.docs.map(d => { const c = d.data(); return { clientId: d.id, name: c.name, redirectUris: c.redirectUris || c.origins || [], createdAt: c.createdAt }; }));
+  } catch (e) { res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
+});
+
+app.delete('/api/oauth/clients/:id', auth, async (req, res) => {
+  try {
+    const doc = await db.collection('oauthClients').doc(req.params.id).get();
+    if (!doc.exists) return res.status(404).json({ error: '앱을 찾을 수 없습니다.' });
+    if (doc.data().ownerId !== req.user.id && !req.user.isAdmin) return res.status(403).json({ error: '권한이 없습니다.' });
+    await db.collection('oauthClients').doc(req.params.id).delete();
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
+});
+
+/* SSO 서버가 redirect_uri 검증에 사용 (공개 정보만) */
+app.get('/api/oauth/clients/:id/public', async (req, res) => {
+  try {
+    const doc = await db.collection('oauthClients').doc(req.params.id).get();
+    if (!doc.exists) return res.status(404).json({ error: '등록되지 않은 client_id입니다.' });
+    const c = doc.data();
+    res.json({ clientId: doc.id, name: c.name, redirectUris: c.redirectUris || c.origins || [] });
+  } catch (e) { res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
+});
+
+/* 내부 전용 엔드포인트: SSO 서버만 호출 (공유 시크릿).
+   미설정 시 통과(개발 편의)하되, 운영에서는 반드시 INTERNAL_SECRET 설정. */
+const INTERNAL_SECRET = process.env.INTERNAL_SECRET || '';
+function internalOnly(req, res, next) {
+  if (!INTERNAL_SECRET) return next();
+  if (req.headers['x-internal-secret'] === INTERNAL_SECRET) return next();
+  return res.status(403).json({ error: 'forbidden' });
+}
+
+/* ── OAuth 인가 코드 grant 저장소 (opaque code, 1회성) ──
+   SSO 서버가 로그인 완료 시 grant를 만들고, /token 교환 때 1회만 소비.
+   access_token은 code에 담지 않고 여기 서버에만 저장됨. */
+app.post('/api/oauth/grant', internalOnly, async (req, res) => {
+  try {
+    const { code, token, clientId, redirectUri, codeChallenge } = req.body || {};
+    if (!code || !token || !clientId || !redirectUri) return res.status(400).json({ error: '필수 파라미터 누락' });
+    /* 토큰이 실제 유효한지 확인 */
+    let u; try { u = jwt.verify(token, JWT_SECRET); } catch { return res.status(401).json({ error: '유효하지 않은 토큰' }); }
+    await db.collection('oauthCodes').doc(sha256(String(code))).set({
+      token: String(token), clientId: String(clientId), redirectUri: String(redirectUri),
+      codeChallenge: codeChallenge ? String(codeChallenge) : null,
+      userId: u.id || '', used: false, expiresAt: Date.now() + 120000, createdAt: Date.now()
+    });
+    res.status(201).json({ ok: true });
+  } catch (e) { console.error('[oauth grant]', e); res.status(500).json({ error: '서버 오류' }); }
+});
+
+/* 인가 코드 1회 소비 (트랜잭션으로 재사용 원천 차단) */
+app.post('/api/oauth/grant/consume', internalOnly, async (req, res) => {
+  try {
+    const { code, clientId } = req.body || {};
+    if (!code || !clientId) return res.status(400).json({ error: 'invalid_request' });
+    const ref = db.collection('oauthCodes').doc(sha256(String(code)));
+    const result = await db.runTransaction(async tx => {
+      const doc = await tx.get(ref);
+      if (!doc.exists) return { err: 'invalid_grant' };
+      const g = doc.data();
+      if (g.used) return { err: 'invalid_grant' };            /* 이미 사용됨 → 거부 */
+      if (g.clientId !== String(clientId)) return { err: 'invalid_grant' };
+      if (Date.now() > g.expiresAt) { tx.delete(ref); return { err: 'invalid_grant' }; }
+      tx.update(ref, { used: true, usedAt: Date.now() });
+      return { g };
+    });
+    if (result.err) return res.status(400).json({ error: result.err });
+    res.json({ token: result.g.token, redirectUri: result.g.redirectUri, codeChallenge: result.g.codeChallenge });
+  } catch (e) { console.error('[oauth consume]', e); res.status(500).json({ error: 'server_error' }); }
+});
+
+/* SSO 서버가 토큰 교환 시 secret 검증에 사용 */
+app.post('/api/oauth/verify', internalOnly, async (req, res) => {
+  try {
+    const { clientId, clientSecret } = req.body || {};
+    if (!clientId || !clientSecret) return res.status(400).json({ ok: false });
+    const doc = await db.collection('oauthClients').doc(String(clientId)).get();
+    if (!doc.exists || doc.data().secretHash !== sha256(String(clientSecret))) return res.status(401).json({ ok: false });
+    res.json({ ok: true, name: doc.data().name, origins: doc.data().origins });
+  } catch (e) { res.status(500).json({ ok: false }); }
+});
+
+/* ══ 가입/로그인은 통합 계정 서버(bytenode-account)로 이관 ══ */
+app.get('/welcome', (req, res) => {
+  const q = req.query.redirect ? '?redirect=' + encodeURIComponent(req.query.redirect) : '';
+  res.redirect(301, 'https://bytenode-account.vercel.app/welcome' + q);
 });
 
 /* ══ SPA fallback ══ */

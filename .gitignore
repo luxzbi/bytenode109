@@ -7,3 +7,5 @@ system_prompt_master.txt
 
 firebase-key.json
 *.log
+
+.vercel

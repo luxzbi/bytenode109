@@ -3,6 +3,13 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta property="og:type" content="website">
+<meta property="og:title" content="bytenode">
+<meta property="og:description" content="글을 쓰고 공유하는 블로그 플랫폼. 수식·표·그래프·PPT까지.">
+<meta property="og:image" content="https://bytenode109.vercel.app/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
 <title>bytenode</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
@@ -569,7 +576,7 @@ input,textarea,select{font-family:inherit;}
 
 <!-- 헤더 -->
 <div id="header">
-  <div class="logo" onclick="showPage('home')" style="cursor:pointer">byte<span>node</span><span style="font-size:.55rem;font-weight:400;color:var(--muted);letter-spacing:.05em;margin-left:7px;vertical-align:middle">for dshs</span></div>
+  <div class="logo" onclick="showPage('home')" style="cursor:pointer">byte<span>node</span><span id="logoBadge" style="font-size:.55rem;font-weight:400;color:var(--muted);letter-spacing:.05em;margin-left:7px;vertical-align:middle">for dshs</span></div>
   <div class="header-right" id="headerRight"></div>
   <button class="hamburger" id="hamburgerBtn" onclick="toggleMobileMenu()">☰</button>
 </div>
@@ -602,6 +609,26 @@ let token  = localStorage.getItem('bn_token') || sessionStorage.getItem('bn_toke
 let me     = JSON.parse(localStorage.getItem('bn_me') || sessionStorage.getItem('bn_me') || 'null');
 let currentPage = 'home';
 let bannerDismissed = false;
+
+/* ── bytenode 통합 계정(SSO) ── */
+const SSO_URL = 'https://bytenode-account.vercel.app';
+/* SSO에서 #bn_token=... 으로 복귀했을 때 세션 저장 */
+(() => {
+  const m = location.hash.match(/bn_token=([^&]+)/);
+  if (!m) return;
+  token = decodeURIComponent(m[1]);
+  localStorage.setItem('bn_token', token);
+  sessionStorage.removeItem('bn_token');
+  history.replaceState(null, '', location.pathname + location.search);
+  fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + token } })
+    .then(r => r.ok ? r.json() : null)
+    .then(u => {
+      if (!u) return;
+      me = u;
+      localStorage.setItem('bn_me', JSON.stringify(u));
+      if (typeof renderHeader === 'function') { renderHeader(); showPage('home'); }
+    }).catch(() => {});
+})();
 
 /* ════════════════════════════════════════
    API
@@ -670,13 +697,21 @@ function selectWriteMode(mode) {
 }
 
 function renderHeader() {
+  /* 계정 유형 배지: 관리자 분류에 따라 로고 옆 표시 */
+  const badge = document.getElementById('logoBadge');
+  if (badge) {
+    const t = me && me.accountType;
+    badge.textContent = t === 'class' ? 'for class' : t === 'scivill' ? 'for scivill' : 'for dshs';
+  }
   const el = document.getElementById('headerRight');
   const mn = document.getElementById('mobileNav');
   if (!me) {
-    el.innerHTML = `<button class="hbtn" onclick="showPage('prompts')">버전 정보</button><a class="hbtn" href="https://byteexam109.vercel.app" style="text-decoration:none">byteexam</a><button class="hbtn" onclick="showPage('guide')">사용방법</button><button class="hbtn" onclick="showPage('notices')">공지</button><button class="hbtn" onclick="showPage('login')">로그인</button><button class="hbtn primary" onclick="showPage('register')">회원가입</button>`;
+    el.innerHTML = `<button class="hbtn" onclick="showPage('prompts')">버전 정보</button><a class="hbtn" href="https://byteexam109.vercel.app" style="text-decoration:none">byteexam</a>
+      <a class="hbtn" href="https://bytetext.vercel.app" style="text-decoration:none">bytetext</a><button class="hbtn" onclick="showPage('guide')">사용방법</button><button class="hbtn" onclick="showPage('notices')">공지</button><button class="hbtn" onclick="showPage('login')">로그인</button><button class="hbtn primary" onclick="showPage('register')">회원가입</button>`;
     mn.innerHTML = `
       <button class="hbtn" onclick="cmm();showPage('prompts')">🔖 버전 정보</button>
       <a class="hbtn" href="https://byteexam109.vercel.app" style="text-decoration:none">📋 byteexam</a>
+      <a class="hbtn" href="https://bytetext.vercel.app" style="text-decoration:none">✍️ bytetext</a>
       <button class="hbtn" onclick="cmm();showPage('guide')">📖 사용방법</button>
       <button class="hbtn" onclick="cmm();showPage('notices')">📢 공지</button>
       <button class="hbtn" onclick="cmm();showPage('login')">로그인</button>
@@ -686,6 +721,7 @@ function renderHeader() {
     el.innerHTML = `
       <button class="hbtn" onclick="showPage('prompts')">버전 정보</button>
       <a class="hbtn" href="https://byteexam109.vercel.app" style="text-decoration:none">byteexam</a>
+      <a class="hbtn" href="https://bytetext.vercel.app" style="text-decoration:none">bytetext</a>
       <button class="hbtn" onclick="showPage('guide')">사용방법</button>
       <button class="hbtn" onclick="showPage('notices')">공지</button>
       <button class="hbtn" onclick="showPage('mybox')">📁 내 저장소</button>
@@ -700,6 +736,7 @@ function renderHeader() {
       </div>
       <button class="hbtn" onclick="cmm();showPage('prompts')">🔖 버전 정보</button>
       <a class="hbtn" href="https://byteexam109.vercel.app" style="text-decoration:none">📋 byteexam</a>
+      <a class="hbtn" href="https://bytetext.vercel.app" style="text-decoration:none">✍️ bytetext</a>
       <button class="hbtn" onclick="cmm();showPage('guide')">📖 사용방법</button>
       <button class="hbtn" onclick="cmm();showPage('notices')">📢 공지</button>
       <button class="hbtn" onclick="cmm();showPage('mybox')">📁 내 저장소</button>
@@ -2601,14 +2638,7 @@ async function renderPost(app, id) {
         }
       });
 
-      html2pdf().set({
-        margin: [12, 12],
-        filename: safeName + '.pdf',
-        image: { type: 'jpeg', quality: 0.95 },
-        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-        jsPDF: { unit: 'mm', format, orientation },
-        pagebreak: { mode: ['avoid-all', 'css'], avoid: ['.bn-chart', '.bn-graph', 'canvas', 'img', 'table', 'blockquote'] }
-      }).from(el).save().then(() => {
+      const restoreStyles = () => {
         el.setAttribute('style', prevStyle);
         el.querySelectorAll('*').forEach(node => {
           if (node._pdfStyle !== undefined) {
@@ -2618,6 +2648,61 @@ async function renderPost(app, id) {
           }
         });
         btn.textContent = '⬇ PDF'; btn.disabled = false;
+      };
+
+      const elH = el.scrollHeight || el.offsetHeight || 1000;
+
+      // 긴 글: 한 캔버스로 캡처하면 브라우저 캔버스 크기 한계 → scale을 낮춰야 해서 흐려짐.
+      // 대신 PDF 페이지 단위로 잘라 각각 scale 2로 캡처해 선명도 유지.
+      const JsPDF = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+      if (elH > 6000 && window.html2canvas && JsPDF) {
+        (async () => {
+          try {
+            const pdf = new JsPDF({ unit: 'mm', format, orientation });
+            const pw = pdf.internal.pageSize.getWidth();
+            const ph = pdf.internal.pageSize.getHeight();
+            const mg = 12;
+            const usableW = pw - mg * 2, usableH = ph - mg * 2;
+            const rect = el.getBoundingClientRect();
+            const elTop = rect.top + window.scrollY;
+            const elW = el.scrollWidth || el.offsetWidth || 800;
+            const slicePx = Math.floor(elW * (usableH / usableW)); // 한 PDF 페이지에 해당하는 px 높이
+            let y = 0, pageNo = 0;
+            while (y < elH) {
+              const h = Math.min(slicePx, elH - y);
+              const canvas = await html2canvas(el, {
+                scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false,
+                y: elTop + y, height: h,
+                windowWidth: document.documentElement.clientWidth
+              });
+              const img = canvas.toDataURL('image/jpeg', 0.92);
+              if (pageNo > 0) pdf.addPage(format, orientation);
+              pdf.addImage(img, 'JPEG', mg, mg, usableW, usableW * (canvas.height / canvas.width));
+              y += h; pageNo++;
+              btn.textContent = `⬇ ${pageNo}p…`;
+            }
+            pdf.save(safeName + '.pdf');
+            restoreStyles();
+          } catch (e) {
+            restoreStyles();
+            alert('PDF 생성 오류: ' + (e && e.message ? e.message : e));
+          }
+        })();
+        return;
+      }
+
+      const autoScale = elH <= 6000 ? 2 : elH <= 18000 ? 1.5 : 1;
+
+      html2pdf().set({
+        margin: [12, 12],
+        filename: safeName + '.pdf',
+        image: { type: 'jpeg', quality: 0.92 },
+        html2canvas: { scale: autoScale, useCORS: true, backgroundColor: '#ffffff', logging: false },
+        jsPDF: { unit: 'mm', format, orientation },
+        pagebreak: { mode: ['avoid-all', 'css'], avoid: ['.bn-chart', '.bn-graph', 'canvas', 'img', 'table', 'blockquote'] }
+      }).from(el).save().then(restoreStyles).catch(e => {
+        restoreStyles();
+        alert('PDF 생성 오류: ' + (e && e.message ? e.message : e));
       });
     };
   } catch(e) { app.innerHTML = `<div class="page"><p class="err">${e.message}</p></div>`; }
@@ -3138,69 +3223,25 @@ async function submitPost(editId) {
 /* ════════════════════════════════════════
    LOGIN / REGISTER
 ════════════════════════════════════════ */
+/* 로그인/회원가입은 bytenode 통합 계정(bytenode-account.vercel.app)에서 처리 */
+function ssoGo(page) {
+  location.href = SSO_URL + '/' + page + '?redirect=' + encodeURIComponent(location.origin + '/');
+}
 function renderLogin(app) {
   app.innerHTML = `
-  <div class="auth-wrap"><div class="auth-box">
+  <div class="auth-wrap"><div class="auth-box" style="text-align:center">
     <h2>로그인</h2>
-    <div class="form-row"><label>아이디</label><input id="lid" placeholder="아이디"/></div>
-    <div class="form-row"><label>비밀번호</label><input id="lpw" type="password" placeholder="비밀번호"/></div>
-    <div style="display:flex;align-items:center;gap:8px;margin:6px 0">
-      <input type="checkbox" id="lremember" checked style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer">
-      <label for="lremember" style="font-size:13px;color:var(--muted);cursor:pointer;margin:0">로그인 상태 유지</label>
-    </div>
-    <div id="loginMsg"></div>
-    <button class="btn primary" style="width:100%;margin-top:10px" onclick="doLogin()">로그인</button>
-    <div class="auth-switch">계정이 없으신가요? <a onclick="showPage('register')">회원가입</a></div>
+    <p style="color:var(--muted);font-size:13px;margin:10px 0 0">bytenode 계정 페이지로 이동합니다…</p>
   </div></div>`;
-  document.getElementById('lpw').addEventListener('keydown',e=>e.key==='Enter'&&doLogin());
+  ssoGo('login');
 }
-
-async function doLogin() {
-  const username = document.getElementById('lid').value.trim();
-  const password = document.getElementById('lpw').value;
-  const msg = document.getElementById('loginMsg');
-  try {
-    const r = await api('POST','/auth/login',{username,password});
-    const rememberEl = document.getElementById('lremember');
-    saveAuth(r.token, r.user, rememberEl ? rememberEl.checked : true);
-    renderHeader();
-    showPage('home');
-  } catch(e) { msg.innerHTML=`<p class="err">${e.message}</p>`; }
-}
-
 function renderRegister(app) {
   app.innerHTML = `
-  <div class="auth-wrap"><div class="auth-box">
+  <div class="auth-wrap"><div class="auth-box" style="text-align:center">
     <h2>회원가입</h2>
-    <div class="form-row"><label>아이디</label><input id="ru" placeholder="영문, 숫자 조합"/></div>
-    <div class="form-row"><label>닉네임</label><input id="rn" placeholder="표시될 이름"/></div>
-    <div class="form-row"><label>비밀번호</label><input id="rp" type="password" placeholder="6자 이상"/></div>
-    <div class="form-row"><label>비밀번호 확인</label><input id="rp2" type="password" placeholder="비밀번호 재입력"/></div>
-    <div id="regMsg"></div>
-    <div style="display:flex;align-items:flex-start;gap:8px;margin:10px 0 6px">
-      <input type="checkbox" id="regAgree" style="width:15px;height:15px;margin-top:3px;accent-color:var(--accent);cursor:pointer;flex-shrink:0">
-      <label for="regAgree" style="font-size:12px;color:var(--muted);line-height:1.7;cursor:pointer"><a href="/terms.html" target="_blank" style="color:#3b82f6;text-decoration:underline">이용약관</a> 및 <a href="/privacy.html" target="_blank" style="color:#3b82f6;text-decoration:underline">개인정보 처리방침</a>에 동의합니다. (필수)</label>
-    </div>
-    <button class="btn primary" style="width:100%;margin-top:4px" onclick="doRegister()">가입하기</button>
-    <div class="auth-switch">이미 계정이 있으신가요? <a onclick="showPage('login')">로그인</a></div>
+    <p style="color:var(--muted);font-size:13px;margin:10px 0 0">bytenode 계정 페이지로 이동합니다…</p>
   </div></div>`;
-}
-
-async function doRegister() {
-  const username    = document.getElementById('ru').value.trim();
-  const displayName = document.getElementById('rn').value.trim();
-  const password    = document.getElementById('rp').value;
-  const password2   = document.getElementById('rp2').value;
-  const msg = document.getElementById('regMsg');
-  const agreeEl = document.getElementById('regAgree');
-  if (agreeEl && !agreeEl.checked) { msg.innerHTML='<p class="err">이용약관 및 개인정보 처리방침에 동의해주세요.</p>'; return; }
-  if (password !== password2) { msg.innerHTML='<p class="err">비밀번호가 일치하지 않습니다.</p>'; return; }
-  try {
-    const r = await api('POST','/auth/register',{username,displayName,password});
-    saveAuth(r.token, r.user);
-    renderHeader();
-    showPage('home');
-  } catch(e) { msg.innerHTML=`<p class="err">${e.message}</p>`; }
+  ssoGo('welcome');
 }
 
 /* ════════════════════════════════════════
@@ -3493,11 +3534,16 @@ async function adminUsers(el) {
     el.innerHTML = `
     <div class="admin-title">유저 관리 <span style="font-size:13px;color:var(--muted)">(${users.length}명)</span></div>
     <table class="admin-table">
-      <thead><tr><th>아이디</th><th>닉네임</th><th>관리자</th><th>게시글</th><th>시험지(QF)</th><th>시험지(BE)</th><th>상태</th><th>가입일</th><th></th></tr></thead>
+      <thead><tr><th>아이디</th><th>닉네임</th><th>유형</th><th>관리자</th><th>게시글</th><th>시험지(QF)</th><th>시험지(BE)</th><th>상태</th><th>가입일</th><th></th></tr></thead>
       <tbody>${users.map(u=>`
         <tr style="${u.banned?'opacity:.6':''}">
           <td>${esc(u.username)}</td>
           <td>${esc(u.displayName)}</td>
+          <td><select onchange="adminSetType('${u.id}', this.value)" style="background:var(--bg3);color:var(--text);border:1px solid var(--border2);border-radius:6px;padding:3px 6px;font-size:11px">
+            <option value="" ${!u.accountType?'selected':''}>일반</option>
+            <option value="class" ${u.accountType==='class'?'selected':''}>학급특색사업 (for class)</option>
+            <option value="scivill" ${u.accountType==='scivill'?'selected':''}>동아리 (for scivill)</option>
+          </select></td>
           <td>${u.isAdmin?'✅':'—'}</td>
           <td style="text-align:center;color:var(--muted)">${u.postCount||0}</td>
           <td style="text-align:center;color:var(--muted)">${u.examCount||0}</td>
@@ -3513,6 +3559,12 @@ async function adminUsers(el) {
         </tr>`).join('')}</tbody>
     </table>`;
   } catch(e) { el.innerHTML=`<p class="err">${e.message}</p>`; }
+}
+async function adminSetType(id, type) {
+  try {
+    await api('POST','/admin/account-type',{ id, type });
+    if (me && me.id === id) { me.accountType = type; renderHeader(); }
+  } catch(e) { alert(e.message); renderAdmin(document.getElementById('app'),'users'); }
 }
 function adminEditCredentials(id, username) {
   // remove existing modal if any
@@ -5945,11 +5997,49 @@ function tokenizeLine(line) {
   return tokens;
 }
 
+function parseMdTable(lines, startIdx) {
+  // Detect markdown table starting at startIdx: | col | col | ...
+  // Returns { block, endIdx } or null
+  const isTableRow = l => /^\s*\|/.test(l) && /\|\s*$/.test(l.trim());
+  if (!isTableRow(lines[startIdx])) return null;
+  const rows = [];
+  let i = startIdx;
+  while (i < lines.length && (isTableRow(lines[i]) || /^\s*\|[-:| ]+\|\s*$/.test(lines[i]))) {
+    const line = lines[i].trim();
+    if (/^\|[-:| ]+\|$/.test(line)) { i++; continue; } // skip separator row
+    const cells = line.replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+    rows.push(cells);
+    i++;
+  }
+  if (rows.length === 0) return null;
+  // First row = header
+  return { block: { type: 'table', rows, noHeader: false }, endIdx: i };
+}
+
 function parseByteCode(code) {
-  const lines = normalizeByteCodeInput(extractMultilineCodeBlocks(String(code || ''))).split('\n');
+  const rawLines = normalizeByteCodeInput(extractMultilineCodeBlocks(String(code || ''))).split('\n');
+  // Pre-process: merge markdown table lines into table blocks
+  const lines = [];
+  let li = 0;
+  while (li < rawLines.length) {
+    const mdT = parseMdTable(rawLines, li);
+    if (mdT) {
+      lines.push({ _mdTable: mdT.block });
+      li = mdT.endIdx;
+    } else {
+      lines.push(rawLines[li]);
+      li++;
+    }
+  }
   const blocks = [];
 
   for (const rawLine of lines) {
+    // markdown table pre-processed block
+    if (rawLine && typeof rawLine === 'object' && rawLine._mdTable) {
+      blocks.push(rawLine._mdTable);
+      blocks.push({ type: 'linebreak' });
+      continue;
+    }
     if (!rawLine.trim()) {
       // 빈 줄(Enter) → 세로 간격
       blocks.push({ type: 'vgap' });
@@ -6035,6 +6125,26 @@ function renderInlineContent(content) {
   return parts.join('');
 }
 
+function escWithMath(text) {
+  if (!text || !text.includes('$')) return esc(text);
+  const kt = window.katex;
+  if (!kt) return esc(text);
+  const parts = [];
+  const re = /\$\$([^$]*?)\$\$|\$([^$\n]{1,800}?)\$/g;
+  let last = 0, m;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) parts.push(esc(text.slice(last, m.index)));
+    const isDisplay = m[1] !== undefined;
+    const expr = isDisplay ? m[1] : m[2];
+    try {
+      parts.push(kt.renderToString(expr.trim(), { throwOnError: false, displayMode: isDisplay, output: 'html' }));
+    } catch(e) { parts.push(esc(m[0])); }
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) parts.push(esc(text.slice(last)));
+  return parts.join('');
+}
+
 function renderPlainInlineText(text) {
   const src = normalizeInlineLinks(text)
     .replace(/\\gt/g, '>').replace(/\\lt/g, '<')
@@ -6044,12 +6154,12 @@ function renderPlainInlineText(text) {
   const re = /\{(https?:\/\/[^}]+)\}\s*([^{}<]*)/g;
   let last = 0, m;
   while ((m = re.exec(src)) !== null) {
-    if (m.index > last) parts.push(esc(src.slice(last, m.index)));
+    if (m.index > last) parts.push(escWithMath(src.slice(last, m.index)));
     const label = (m[2] || m[1]).trim();
     parts.push(`<a href="${esc(m[1])}" target="_blank" rel="noopener" style="text-decoration:underline;opacity:.85">${esc(label)}</a>`);
     last = m.index + m[0].length;
   }
-  if (last < src.length) parts.push(esc(src.slice(last)));
+  if (last < src.length) parts.push(escWithMath(src.slice(last)));
   return parts.join('');
 }
 function findLast(arr, fn) {
