@@ -621,7 +621,14 @@ const SSO_URL = 'https://bytenode-account.vercel.app';
   sessionStorage.removeItem('bn_token');
   history.replaceState(null, '', location.pathname + location.search);
   fetch('/api/auth/me', { headers: { Authorization: 'Bearer ' + token } })
-    .then(r => r.ok ? r.json() : null)
+    .then(r => {
+      if (r.status === 401) {  /* 토큰 무효(세션 만료/버전 불일치) → 조용히 재로그인 */
+        clearBadSession();
+        location.href = 'https://bytenode-account.vercel.app/login?redirect=' + encodeURIComponent(location.origin + '/');
+        return null;
+      }
+      return r.ok ? r.json() : null;
+    })
     .then(u => {
       if (!u) return;
       me = u;
@@ -629,6 +636,12 @@ const SSO_URL = 'https://bytenode-account.vercel.app';
       if (typeof renderHeader === 'function') { renderHeader(); showPage('home'); }
     }).catch(() => {});
 })();
+/* 무효 토큰 정리: 저장된 세션을 비우고 메모리 상태도 초기화 */
+function clearBadSession() {
+  token = null; me = null;
+  localStorage.removeItem('bn_token'); localStorage.removeItem('bn_me');
+  sessionStorage.removeItem('bn_token'); sessionStorage.removeItem('bn_me');
+}
 
 /* ════════════════════════════════════════
    API
@@ -3250,7 +3263,18 @@ function renderRegister(app) {
 async function renderSettings(app) {
   if (!me) { showPage('login'); return; }
   let u;
-  try { u = await api('GET','/auth/me'); } catch { u = me; }
+  try {
+    u = await api('GET','/auth/me');
+    me = u; localStorage.setItem('bn_me', JSON.stringify(u));  /* 최신값으로 갱신 */
+  } catch {
+    /* 조회 실패: me에 실제 프로필이 있으면 그걸로, 없으면(SSO 토큰만 있는 등) 재로그인 */
+    if (me && me.username) { u = me; }
+    else {
+      clearBadSession();
+      location.href = SSO_URL + '/login?redirect=' + encodeURIComponent(location.origin + '/');
+      return;
+    }
+  }
 
   app.innerHTML = `
   <div class="page" style="max-width:600px">
