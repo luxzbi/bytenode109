@@ -472,6 +472,16 @@ function mapUser(id, d) {
 
 /* ══ AUTH ══ */
 
+/* 아이디 사용 가능 여부(가입 마법사에서 실시간 중복 검사용). 공개 엔드포인트. */
+app.get('/api/auth/username-available', async (req, res) => {
+  try {
+    const u = String(req.query.u || '').trim();
+    if (!/^[a-zA-Z0-9_]{3,30}$/.test(u)) return res.status(400).json({ available: false, error: '아이디 형식이 올바르지 않습니다.' });
+    const ex = await db.collection('users').where('username', '==', u).limit(1).get();
+    res.json({ available: ex.empty });
+  } catch (e) { res.status(500).json({ available: false, error: '서버 오류가 발생했습니다.' }); }
+});
+
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { username, displayName, password } = req.body;
