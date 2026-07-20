@@ -9,3 +9,6 @@ firebase-key.json
 *.log
 
 .vercel
+
+.npm-cache/
+server_out.txt

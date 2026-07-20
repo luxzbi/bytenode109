@@ -423,12 +423,40 @@ async function uploadToBlob(file) {
   return blob.url;
 }
 
+/* ── 토큰 무효화(revoke) 지원 ──
+   각 유저 문서의 tokenVersion(tv)과 JWT의 tv 클레임을 대조. 불일치 시 거부.
+   비번 변경·"모든 기기 로그아웃"·정지 시 tv를 올리면 기존 토큰 전부 무효화됨.
+   과도한 읽기를 막기 위해 tv를 30초 캐시(무효화는 최대 30초 내 전파). */
+const _tvCache = new Map();
+async function currentTokenVersion(userId) {
+  const c = _tvCache.get(userId);
+  if (c && Date.now() < c.exp) return c.tv;
+  const doc = await db.collection('users').doc(userId).get();
+  const tv = doc.exists ? (doc.data().tokenVersion || 0) : 0;
+  _tvCache.set(userId, { tv, exp: Date.now() + 30000 });
+  return tv;
+}
+function bumpTokenVersion(userId) {
+  _tvCache.delete(userId);
+  return db.collection('users').doc(userId).update({
+    tokenVersion: admin.firestore.FieldValue.increment(1)
+  });
+}
+
 /* ── JWT 미들웨어 ── */
-function auth(req, res, next) {
+async function auth(req, res, next) {
   const h = req.headers.authorization;
   if (!h || !h.startsWith('Bearer ')) return res.status(401).json({ error: '인증이 필요합니다.' });
-  try { req.user = jwt.verify(h.slice(7), JWT_SECRET); next(); }
-  catch { res.status(401).json({ error: '만료되었거나 잘못된 토큰입니다.' }); }
+  let payload;
+  try { payload = jwt.verify(h.slice(7), JWT_SECRET); }
+  catch { return res.status(401).json({ error: '만료되었거나 잘못된 토큰입니다.' }); }
+  try {
+    /* 구 토큰(tv 없음)은 0으로 간주 → 기존 세션 유지, 이후 bump로 무효화 가능 */
+    const cur = await currentTokenVersion(payload.id);
+    if ((payload.tv || 0) !== cur) return res.status(401).json({ error: '세션이 만료되었습니다. 다시 로그인하세요.' });
+  } catch { /* 조회 실패 시 가용성 우선: 통과 */ }
+  req.user = payload;
+  next();
 }
 async function adminOnly(req, res, next) {
   try {
@@ -439,7 +467,7 @@ async function adminOnly(req, res, next) {
 }
 function mapUser(id, d) {
   if (!d) return null;
-  return { id, _id: id, username: d.username, displayName: d.displayName||'', pw: d.pw, isAdmin: d.isAdmin||false, bio: d.bio||'', avatar: d.avatar||'', banned: d.banned||false, bannedReason: d.bannedReason||'', accountType: d.accountType||'', createdAt: d.createdAt };
+  return { id, _id: id, username: d.username, displayName: d.displayName||'', pw: d.pw, isAdmin: d.isAdmin||false, bio: d.bio||'', avatar: d.avatar||'', banned: d.banned||false, bannedReason: d.bannedReason||'', accountType: d.accountType||'', tokenVersion: d.tokenVersion||0, createdAt: d.createdAt };
 }
 
 /* ══ AUTH ══ */
@@ -455,8 +483,8 @@ app.post('/api/auth/register', async (req, res) => {
     if (!existing.empty) return res.status(409).json({ error: '이미 사용 중인 아이디입니다.' });
     const hashed = await bcrypt.hash(password, 12);
     const id = uuid();
-    await db.collection('users').doc(id).set({ username, displayName, pw: hashed, isAdmin: false, bio: '', avatar: '', banned: false, bannedReason: '', createdAt: Date.now() });
-    const token = jwt.sign({ id, username, displayName, isAdmin: false }, JWT_SECRET, { expiresIn: '30d' });
+    await db.collection('users').doc(id).set({ username, displayName, pw: hashed, isAdmin: false, bio: '', avatar: '', banned: false, bannedReason: '', tokenVersion: 0, createdAt: Date.now() });
+    const token = jwt.sign({ id, username, displayName, isAdmin: false, tv: 0 }, JWT_SECRET, { expiresIn: '30d' });
     res.json({ token, user: { id, username, displayName, isAdmin: false, bio: '', avatar: '', accountType: '' } });
   } catch(e) { console.error('[register]', e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
@@ -494,7 +522,7 @@ app.post('/api/auth/login', async (req, res) => {
     if (!ok) return res.status(401).json({ error: '아이디 또는 비밀번호가 틀렸습니다.' });
     if (user.banned) return res.status(403).json({ error: '정지된 계정입니다.', banned: true, bannedReason: user.bannedReason||'관리자에 의해 정지됨' });
     await loginReset(username);   /* 성공 시 시도 카운터 초기화 */
-    const token = jwt.sign({ id: user.id, username: user.username, displayName: user.displayName, isAdmin: user.isAdmin }, JWT_SECRET, { expiresIn: '30d' });
+    const token = jwt.sign({ id: user.id, username: user.username, displayName: user.displayName, isAdmin: user.isAdmin, tv: user.tokenVersion }, JWT_SECRET, { expiresIn: '30d' });
     res.json({ token, user: { id: user.id, username: user.username, displayName: user.displayName, isAdmin: user.isAdmin, bio: user.bio, avatar: user.avatar, accountType: user.accountType } });
   } catch(e) { console.error('[login]', e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
@@ -531,9 +559,25 @@ app.patch('/api/auth/password', auth, async (req, res) => {
     const ok = await bcrypt.compare(currentPassword, user.pw);
     if (!ok) return res.status(401).json({ error: '현재 비밀번호가 틀렸습니다.' });
     const hashed = await bcrypt.hash(newPassword, 12);
+    /* 비번 변경 시 기존 세션 전부 무효화(tv 증가) 후, 현재 기기용 새 토큰 발급 */
     await db.collection('users').doc(req.user.id).update({ pw: hashed });
-    res.json({ ok: true });
+    await bumpTokenVersion(req.user.id);
+    const newTv = (user.tokenVersion || 0) + 1;
+    const token = jwt.sign({ id: user.id, username: user.username, displayName: user.displayName, isAdmin: user.isAdmin, tv: newTv }, JWT_SECRET, { expiresIn: '30d' });
+    res.json({ ok: true, token });
   } catch(e) { console.error('[password]', e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
+});
+
+/* 모든 기기에서 로그아웃 — 이 계정의 기존 토큰 전부 즉시 무효화, 현재 기기만 새 토큰 */
+app.post('/api/auth/logout-all', auth, async (req, res) => {
+  try {
+    const doc = await db.collection('users').doc(req.user.id).get();
+    if (!doc.exists) return res.status(404).json({ error: '유저를 찾을 수 없습니다.' });
+    const u = mapUser(doc.id, doc.data());
+    await bumpTokenVersion(req.user.id);
+    const token = jwt.sign({ id: u.id, username: u.username, displayName: u.displayName, isAdmin: u.isAdmin, tv: (u.tokenVersion||0) + 1 }, JWT_SECRET, { expiresIn: '30d' });
+    res.json({ ok: true, token });
+  } catch(e) { console.error('[logout-all]', e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
 app.post('/api/auth/avatar', auth, upload.single('avatar'), async (req, res) => {
@@ -843,6 +887,7 @@ app.post('/api/admin/ban', auth, adminOnly, async (req, res) => {
     if (!doc.exists) return res.status(404).json({ error: '유저 없음' });
     if (doc.data().isAdmin) return res.status(400).json({ error: '관리자는 정지할 수 없습니다.' });
     await db.collection('users').doc(id).update({ banned: true, bannedReason: (reason||'').trim().slice(0,200)||'관리자에 의해 정지됨', bannedAt: Date.now() });
+    await bumpTokenVersion(id);   /* 정지 즉시 기존 세션 전부 무효화 */
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
