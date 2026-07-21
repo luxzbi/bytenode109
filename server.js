@@ -745,6 +745,8 @@ app.get('/api/notices/banner', async (req, res) => {
     if (snap.empty) return res.json(null);
     const sorted = snap.docs.sort((a,b)=>b.data().createdAt-a.data().createdAt);
     const d = sorted[0]; const n = d.data();
+    /* 클라이언트가 30초마다 확인하므로 짧게 캐시해 Firestore 읽기를 줄인다 */
+    res.set('Cache-Control', 'public, max-age=20');
     res.json({ id: d.id, message: n.message, createdAt: n.createdAt });
   } catch(e) { console.error('[notices/banner]', e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });

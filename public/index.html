@@ -772,17 +772,24 @@ function closeMobileMenu(){
 /* ════════════════════════════════════════
    BANNER
 ════════════════════════════════════════ */
+/* 배너는 주기적으로 확인해서, 이미 열어 둔 화면에도 새로고침 없이 뜨게 한다.
+   같은 배너를 반복해서 띄우지 않도록 마지막으로 보여준 id를 기억한다. */
+let lastBannerId = null, bannerTimer = null;
 async function loadBanner() {
   try {
     const n = await api('GET','/notices/banner');
-    if (n && n.message && !bannerDismissed) {
-      document.getElementById('bannerText').textContent = n.message;
-      document.getElementById('banner').classList.add('show');
-      setTimeout(() => document.getElementById('banner').classList.remove('show'), 6000);
-    }
+    if (!n || !n.message) return;
+    if (n.id === lastBannerId) return;      /* 이미 보여준 배너 */
+    lastBannerId = n.id;
+    const box = document.getElementById('banner');
+    document.getElementById('bannerText').textContent = n.message;
+    box.classList.add('show');
+    clearTimeout(bannerTimer);
+    bannerTimer = setTimeout(() => box.classList.remove('show'), 6000);
   } catch {}
 }
-function closeBanner() { document.getElementById('banner').classList.remove('show'); bannerDismissed=true; }
+/* 닫아도 다음에 등록되는 새 배너는 다시 뜬다 */
+function closeBanner() { clearTimeout(bannerTimer); document.getElementById('banner').classList.remove('show'); }
 
 /* ════════════════════════════════════════
    ROUTER
@@ -8876,6 +8883,10 @@ const _urlPost = new URLSearchParams(location.search).get('p');
 if (_urlPost) showPage('post', _urlPost);
 else showPage('home');
 loadBanner();
+/* 30초마다 확인 → 관리자가 배너를 올리면 열려 있는 화면에도 곧 뜬다.
+   탭이 백그라운드일 때는 건너뛰어 불필요한 조회를 줄인다. */
+setInterval(() => { if (!document.hidden) loadBanner(); }, 30000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) loadBanner(); });
 
 // 로그인 유지 확인
 if (token) {
