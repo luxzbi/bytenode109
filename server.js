@@ -377,7 +377,10 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "cdnjs.cloudflare.com", "ajax.googleapis.com"],
+      /* 인라인 <script> 블록을 외부 파일로 분리해 'unsafe-inline'을 뺐다.
+       주입된 <script>는 이제 실행되지 않는다. onclick 속성 핸들러가 185곳 남아
+       script-src-attr에만 예외를 둔다. CDN 스크립트는 전부 SRI로 무결성 검증. */
+      scriptSrc: ["'self'", "cdn.jsdelivr.net", "cdnjs.cloudflare.com", "ajax.googleapis.com"],
       scriptSrcAttr: ["'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net"],
       imgSrc: ["'self'", "data:", "blob:", "*.public.blob.vercel-storage.com"],
