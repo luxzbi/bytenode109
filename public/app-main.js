@@ -2642,7 +2642,7 @@ async function submitPost(editId) {
 ════════════════════════════════════════ */
 /* 로그인/회원가입은 bytenode 통합 계정(bytenode-account.vercel.app)에서 처리 */
 function ssoGo(page) {
-  location.href = SSO_URL + '/' + page + '?redirect=' + encodeURIComponent(location.origin + '/');
+  location.href = SSO_URL + '/' + page + '?redirect=' + encodeURIComponent(location.href);
 }
 function renderLogin(app) {
   app.innerHTML = `
