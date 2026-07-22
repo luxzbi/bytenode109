@@ -455,8 +455,15 @@ async function auth(req, res, next) {
   catch { return res.status(401).json({ error: '만료되었거나 잘못된 토큰입니다.' }); }
   try {
     /* 구 토큰(tv 없음)은 0으로 간주 → 기존 세션 유지, 이후 bump로 무효화 가능 */
-    const cur = await currentTokenVersion(payload.id);
-    if ((payload.tv || 0) !== cur) return res.status(401).json({ error: '세션이 만료되었습니다. 다시 로그인하세요.' });
+    let cur = await currentTokenVersion(payload.id);
+    if ((payload.tv || 0) !== cur) {
+      /* 캐시는 인스턴스마다 따로다. 다른 인스턴스에서 tokenVersion이 오른 직후에는
+         방금 정상 발급된 토큰이 이 인스턴스의 30초 캐시와 어긋나 거부됐다.
+         불일치하면 캐시를 버리고 원본을 다시 확인한 뒤에만 거부한다. */
+      _tvCache.delete(payload.id);
+      cur = await currentTokenVersion(payload.id);
+      if ((payload.tv || 0) !== cur) return res.status(401).json({ error: '세션이 만료되었습니다. 다시 로그인하세요.' });
+    }
   } catch { /* 조회 실패 시 가용성 우선: 통과 */ }
   req.user = payload;
   next();
