@@ -1442,6 +1442,14 @@ app.get('/welcome', (req, res) => {
 });
 
 /* ══ SPA fallback ══ */
+/* 실제 헬스체크. 이전에는 이 경로가 catch-all로 넘어가 index.html이 200으로 나갔고,
+   그래서 관리 대시보드가 서버 상태와 무관하게 항상 정상으로 표시했다. */
+app.get('/api/health', async (req, res) => {
+  let database = 'down';
+  try { await db.collection('users').limit(1).get(); database = 'up'; } catch (_) {}
+  res.set('Cache-Control', 'no-store').json({ ok: true, service: 'bytenode', database });
+});
+
 app.get('*', (req, res) => res.sendFile(path.join(PUB, 'index.html')));
 
 app.listen(PORT, () => console.log(`\n✅ bytenode109 실행 중 → http://localhost:${PORT}\n`));
