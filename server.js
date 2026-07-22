@@ -382,7 +382,7 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net"],
       imgSrc: ["'self'", "data:", "blob:", "*.public.blob.vercel-storage.com"],
       mediaSrc: ["'self'", "blob:", "*.public.blob.vercel-storage.com"],
-      connectSrc: ["'self'"],
+      connectSrc: ["'self'", "https://bytenode-account.vercel.app"],
       objectSrc: ["'none'"],
       workerSrc: ["blob:"]
     }
