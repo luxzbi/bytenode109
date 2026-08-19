@@ -5,7 +5,9 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "check": "node --check server.js && node --check public/app-main.js && node --check public/app-init.js",
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
     "@vercel/blob": "^2.3.3",
