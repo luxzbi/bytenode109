@@ -418,12 +418,41 @@ const upload = multer({
   fileFilter: (req, file, cb) => ALLOWED_MIME.test(file.mimetype) ? cb(null, true) : cb(new Error('허용되지 않는 파일 형식입니다.')),
   limits: { fileSize: 50 * 1024 * 1024 }
 });
+const AVATAR_MIME = /^image\/(jpeg|png|webp)$/;
+const avatarUpload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: (req, file, cb) => AVATAR_MIME.test(file.mimetype) ? cb(null, true) : cb(new Error('PNG, JPG, WEBP 이미지만 사용할 수 있습니다.')),
+  limits: { fileSize: 2 * 1024 * 1024, files: 1 }
+}).single('avatar');
+
+function acceptAvatar(req, res, next) {
+  avatarUpload(req, res, err => {
+    if (!err) return next();
+    if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({ error: '프로필 이미지는 2MB 이하여야 합니다.' });
+    }
+    return res.status(400).json({ error: err.message || '프로필 이미지를 확인할 수 없습니다.' });
+  });
+}
+
 async function uploadToBlob(file) {
   const { put } = require('@vercel/blob');
   const extMap = { 'image/jpeg':'.jpg','image/png':'.png','image/gif':'.gif','image/webp':'.webp','image/avif':'.avif','video/mp4':'.mp4','video/webm':'.webm','video/ogg':'.ogv','model/gltf-binary':'.glb','model/gltf+json':'.gltf' };
   const ext = extMap[file.mimetype] || '.bin';
   const blob = await put(uuid() + ext, file.buffer, { access: 'public' });
   return blob.url;
+}
+
+async function deleteStoredBlob(url) {
+  if (!url) return;
+  try {
+    const parsed = new URL(url);
+    if (!parsed.hostname.endsWith('.public.blob.vercel-storage.com')) return;
+    const { del } = require('@vercel/blob');
+    await del(url);
+  } catch (e) {
+    console.error('[blob delete]', e.message);
+  }
 }
 
 /* ── 토큰 무효화(revoke) 지원 ──
@@ -600,11 +629,21 @@ app.post('/api/auth/logout-all', auth, async (req, res) => {
   } catch(e) { console.error('[logout-all]', e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
-app.post('/api/auth/avatar', auth, upload.single('avatar'), async (req, res) => {
+app.post('/api/auth/avatar', auth, acceptAvatar, async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: '파일이 없습니다.' });
+    const ref = db.collection('users').doc(req.user.id);
+    const doc = await ref.get();
+    if (!doc.exists) return res.status(404).json({ error: '유저를 찾을 수 없습니다.' });
+    const oldUrl = doc.data().avatar || '';
     const url = await uploadToBlob(req.file);
-    await db.collection('users').doc(req.user.id).update({ avatar: url });
+    try {
+      await ref.update({ avatar: url });
+    } catch (e) {
+      await deleteStoredBlob(url);
+      throw e;
+    }
+    await deleteStoredBlob(oldUrl);
     res.json({ url });
   } catch(e) { console.error('[avatar]', e); res.status(500).json({ error: '업로드 실패' }); }
 });
@@ -888,12 +927,12 @@ app.get('/api/admin/users', auth, adminOnly, async (req, res) => {
   } catch(e) { console.error('[admin/users]', e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
-/* 계정 유형 분류: '' | 'class'(학급특색사업) | 'scivill'(동아리) */
+/* 계정 유형 분류: ''(일반) | 'class'(학급특색사업) | 'scivill'(동아리) | 'dshs'(대신고) */
 app.post('/api/admin/account-type', auth, adminOnly, async (req, res) => {
   try {
     const { id, type } = req.body || {};
     if (!id) return res.status(400).json({ error: '대상 ID 필요' });
-    if (!['', 'class', 'scivill'].includes(type)) return res.status(400).json({ error: '유형은 class, scivill 또는 빈 값이어야 합니다.' });
+    if (!['', 'class', 'scivill', 'dshs'].includes(type)) return res.status(400).json({ error: '유형은 class, scivill, dshs 또는 빈 값이어야 합니다.' });
     const doc = await db.collection('users').doc(id).get();
     if (!doc.exists) return res.status(404).json({ error: '유저 없음' });
     await db.collection('users').doc(id).update({ accountType: type });
@@ -1141,7 +1180,7 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
 const CHATBOT_SYSTEM_PROMPT = `당신은 bytenode와 byteexam 플랫폼 전용 AI 도우미입니다. 한국어로 친절하고 간결하게 답변하세요.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# bytenode 플랫폼 (현재 버전: 2e)
+# bytenode 플랫폼 (현재 버전: 3)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 bytenode는 선생님이 수업 자료(게시물)를 작성·공유하고 학생이 열람하는 교육 플랫폼입니다.
@@ -1152,9 +1191,9 @@ bytenode는 선생님이 수업 자료(게시물)를 작성·공유하고 학생
 3. 모드 선택 후 "AI 프롬프트 복사" → Claude/ChatGPT 등 AI에 붙여넣기
 4. AI가 생성한 bytenode 코드를 에디터에 붙여넣기 → "발행" 클릭
 
-## 3가지 모드 (2e 버전 기준)
+## 3가지 모드 (3 버전 기준)
 
-### 📝 bytenode 2e — 블로그 글쓰기
+### 📝 bytenode 3 — 블로그 글쓰기
 일반 글, 학습 자료, 설명 문서 등 텍스트 중심 게시물 작성.
 
 DSL 태그 문법 (<tagname: 내용> 형태):
@@ -1166,6 +1205,7 @@ DSL 태그 문법 (<tagname: 내용> 형태):
 - <code: 언어 | 코드> — 코드 블록
 - <quote: 내용 | 출처> — 인용문
 - <callout: 아이콘 | 제목 | 내용> — 강조 박스
+- <footnote: 출처: 기관명·문서명·연도 또는 URL> — 통계·법령·연구 결과의 출처 각주
 - <list: 항목1 | 항목2 | ...> — 목록
 - <divider:> — 구분선
 - <video: URL> — 동영상 임베드
@@ -1202,10 +1242,10 @@ DSL 태그:
 - 관리자 페이지: 게시물·프롬프트·학생 현황 관리
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# byteexam 플랫폼 (현재 버전: 2.1s)
+# byteexam 플랫폼 (현재 버전: 3s)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-byteexam은 AI를 이용해 수학 시험지를 자동 생성하는 도구입니다.
+byteexam은 AI를 이용해 수학·사회·정보·파이썬 시험지를 자동 생성하는 도구입니다.
 주소: https://byteexam109.vercel.app
 
 ## 시험지 만들기 순서
@@ -1216,19 +1256,26 @@ byteexam은 AI를 이용해 수학 시험지를 자동 생성하는 도구입니
 5. 미리보기 확인 → DOCX 내보내기 또는 PDF 인쇄
 
 ## 지원 과목 및 난이도
-- 과목: 수학 (공통수학1·2, 수학Ⅰ·Ⅱ, 확통, 미적, 기하 등), 독토글(독서·논술)
-- 난이도: 기본 / 실력 / 대전권기출 / 강남8학군+전국단위자사고 / 모의고사변형 / 과학고+영재고 / 수능-쉬움 / 수능-중간
+- 과목: 수학, 사회(중1~고3), 정보·파이썬(고1~고3), 독토글(독서·논술)
+- 난이도: 기본 / 실력 / 강남8학군+전국단위자사고 / 모의고사변형 / 과학고+영재고
+- 지역별 출제 맥락: 사회·수학에서 선택 가능, 정보·파이썬에서는 제공하지 않음
 
 ## byteexam DSL 코드 형식
 ---BYTEEXAM-START---
 [HEADER] 과목·학년 정보
+[TEXTBOOK] id=, title=, source=, content= 형식의 재사용 교과서형 지문
 [QUESTION] num=번호 type=유형 points=배점 text=문제 answer=정답
 [FIGURE:] / [COORD:] / [FIGURE3D:] 도형·그래프 태그 (2s 이상)
 [PAGE] 페이지 구분
 [ANSWER_SHEET] 정답 일람표
 ---BYTEEXAM-END---
 
-## 2.1s 신기능 — 도형 삽입 (📐 도형 삽입 버튼)
+## 3s 신기능 — 과목별 조사 프롬프트와 교과서형 지문
+- 사회·정보·파이썬 과목과 난이도별 전용 문항 설계 기준
+- 사회는 [TEXTBOOK] 블록의 여러 줄 지문을 textbook=textbook text 1 형식으로 문제에 연결
+- 동일 지문을 여러 문항에서 재사용하고 PDF·DOCX·미리보기에 표시
+
+## 도형 삽입 (📐 도형 삽입 버튼)
 시험지 편집기 우측에 도형 삽입 버튼이 생겼습니다.
 - [COORD:] 탭: 좌표계 (타원, 쌍곡선, 삼각함수, 지수, 로그, 적분 색칠 등)
 - [FIGURE:] 탭: 기하도형 (삼각형, 사각형, 원, 호, 벡터 등)

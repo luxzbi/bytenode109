@@ -69,8 +69,8 @@ function logout() { token=null; me=null; localStorage.removeItem('bn_token'); lo
 ════════════════════════════════════════ */
 function showWriteModal() {
   const MODES = [
-    { id:'bytenode',         emoji:'📝', name:'bytenode 2',                 desc:'기본 블로그 글쓰기' },
-    { id:'byteexam',         emoji:'📋', name:'byteexam 2.1s',             desc:'AI 프롬포트로 기출문제 생성', accent:true },
+    { id:'bytenode',         emoji:'📝', name:'bytenode 3',                 desc:'출처 각주를 지원하는 블로그 글쓰기' },
+    { id:'byteexam',         emoji:'📋', name:'byteexam 3s',                desc:'AI 프롬포트로 기출문제 생성', accent:true },
     { id:'flashinfo',        emoji:'📊', name:'bytegraphic 2e',            desc:'인포그래픽·데이터 시각화' },
     { id:'flashppt',         emoji:'🎞️', name:'bytenode-ppt 2e',           desc:'프레젠테이션 슬라이드' },
   ];
@@ -110,8 +110,10 @@ function renderHeader() {
   /* 계정 유형 배지: 관리자 분류에 따라 로고 옆 표시 */
   const badge = document.getElementById('logoBadge');
   if (badge) {
-    const t = me && me.accountType;
-    badge.textContent = t === 'class' ? 'for class' : t === 'scivill' ? 'for scivill' : 'for dshs';
+    const labels = { class: 'for class', scivill: 'for scivill', dshs: 'for dshs' };
+    const label = labels[me && me.accountType] || '';
+    badge.textContent = label;
+    badge.hidden = !label;
   }
   const el = document.getElementById('headerRight');
   const mn = document.getElementById('mobileNav');
@@ -121,7 +123,7 @@ function renderHeader() {
     mn.innerHTML = `
       <button class="hbtn" onclick="cmm();showPage('prompts')">🔖 버전 정보</button>
       <a class="hbtn" href="https://byteexam109.vercel.app" style="text-decoration:none">📋 byteexam</a>
-      <a class="hbtn" href="https://bytetext.vercel.app" style="text-decoration:none">✍️ bytetext</a>
+      <a class="hbtn" href="https://byteworkspace.vercel.app" style="text-decoration:none">🏠 byteworkspace</a>
       <button class="hbtn" onclick="cmm();showPage('guide')">📖 사용방법</button>
       <button class="hbtn" onclick="cmm();showPage('notices')">📢 공지</button>
       <button class="hbtn" onclick="cmm();showPage('login')">로그인</button>
@@ -146,7 +148,7 @@ function renderHeader() {
       </div>
       <button class="hbtn" onclick="cmm();showPage('prompts')">🔖 버전 정보</button>
       <a class="hbtn" href="https://byteexam109.vercel.app" style="text-decoration:none">📋 byteexam</a>
-      <a class="hbtn" href="https://bytetext.vercel.app" style="text-decoration:none">✍️ bytetext</a>
+      <a class="hbtn" href="https://byteworkspace.vercel.app" style="text-decoration:none">🏠 byteworkspace</a>
       <button class="hbtn" onclick="cmm();showPage('guide')">📖 사용방법</button>
       <button class="hbtn" onclick="cmm();showPage('notices')">📢 공지</button>
       <button class="hbtn" onclick="cmm();showPage('mybox')">📁 내 저장소</button>
@@ -249,6 +251,25 @@ async function myboxDelete(id) {
 }
 
 const BUILTIN_PROMPTS = [
+  { tier:'3',  codeName:'bytenode 3',     date:'2026-08-19', note:'출처 각주를 지원하는 블로그 글쓰기', getContent:()=>`릴리즈 일자: 2026-08-19 / 이전 버전: bytenode 2
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【신규 기능 — 출처 각주】
+• 기본 블로그 프롬프트에 <footnote: 출처> 태그 추가
+• 통계·법령·연구 결과처럼 검증 가능한 사실 바로 아래에 출처를 표시
+• 기존 bytenode 문법과 렌더러는 그대로 호환` },
+  { tier:'3s', codeName:'byteexam 3s',    date:'2026-08-19', note:'사회·정보·파이썬 및 교과서 지문 참조', getContent:()=>`릴리즈 일자: 2026-08-19 / 이전 버전: byteexam 2.1s
+→ https://byteexam109.vercel.app
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【신규 과목】
+• 사회: 중1~고3, 전국 공통 또는 지역별 출제 맥락 선택
+• 정보·파이썬: 고1~고3, 전국 공통 기준 (지역 선택 없음)
+• 다섯 난이도별 과목 전용 조사·문항 설계 기준 적용
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【교과서형 지문 저장소】
+• [TEXTBOOK] 블록에서 textbook text 1, 2… 지문을 한 번 정의
+• 문제의 textbook= 필드가 필요한 지문을 자동으로 불러와 본문 박스로 표시
+• 여러 줄 지문 보존, 동일 지문 재사용, PDF·DOCX·인쇄 미리보기 지원
+• 사용자 제공 교과서 원문 또는 공식 자료 기반 재구성 지문을 출처와 함께 사용` },
   { tier:'2',  codeName:'bytenode 2',     date:'2026-07-16', note:'블로그 글쓰기', getContent:()=>`릴리즈 일자: 2026-07-16 / 이전 버전: bytenode 1
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 【새 글 쓰기 개선】
@@ -1617,7 +1638,7 @@ function makePromptRow(idx, codeName, note, dateStr, content, isNew) {
       </div>
     </div>` : '';
   // changelog 형식으로 렌더링할 버전 목록
-  const isByteexamVer = codeName.startsWith('byteexam ') || ['bytenode 2','bytegraphic 2e','bytenode-ppt 2e'].includes(codeName);
+  const isByteexamVer = codeName.startsWith('byteexam ') || ['bytenode 3','bytenode 2','bytegraphic 2e','bytenode-ppt 2e'].includes(codeName);
   function buildChangelog(text) {
     return `<div style="padding:4px 0 8px">` +
       text.split('\n').map(line => {
@@ -1719,6 +1740,8 @@ async function renderPrompts(app) {
 
     // 내장 프롬프트 — tier별 그룹 분류
     const tiers = [
+      { key:'3s', label:'3s', color:'#f0abfc', bg:'rgba(240,171,252,.12)', border:'rgba(240,171,252,.38)' },
+      { key:'3',  label:'3',  color:'#34d399', bg:'rgba(52,211,153,.1)', border:'rgba(52,211,153,.35)' },
       { key:'2s', label:'2s', color:'#c084fc', bg:'rgba(192,132,252,.12)', border:'rgba(192,132,252,.35)' },
       { key:'2e', label:'2e', color:'#38bdf8', bg:'rgba(56,189,248,.12)',  border:'rgba(56,189,248,.35)'  },
       { key:'2',  label:'2',  color:'var(--muted)', bg:'rgba(255,255,255,.03)', border:'var(--border)' },
@@ -1801,8 +1824,8 @@ function renderGuide(app) {
     <!-- bytenode 사용법 -->
     <h3 style="font-size:15px;font-weight:700;margin-bottom:14px;padding-bottom:6px;border-bottom:1px solid var(--border)">📝 bytenode 사용법</h3>
     ${GUIDE_CARD(`${STEP(1,'회원가입 / 로그인')} <ul style="padding-left:16px;list-style:disc;display:flex;flex-direction:column;gap:4px"><li>상단 <strong>「회원가입」</strong>을 눌러 계정을 만듭니다.</li><li>같은 계정으로 byteexam에도 로그인됩니다.</li></ul>`, '')}
-    ${GUIDE_CARD(`${STEP(2,'콘텐츠 글쓰기')} <ul style="padding-left:16px;list-style:disc;display:flex;flex-direction:column;gap:4px"><li>상단 <strong>「+ 글쓰기」</strong>를 눌러 콘텐츠 종류를 선택합니다.</li><li><strong>bytenode 1</strong> — 일반 블로그 글 / <strong>bytegraphic 1e</strong> — 인포그래픽 / <strong>bytenode-ppt 1e</strong> — PPT 슬라이드</li><li>AI 프롬프트를 복사해서 Claude/GPT 등에 붙여넣고, 결과 코드를 다시 붙여넣으면 자동으로 렌더링됩니다.</li></ul>`, '')}
-    ${GUIDE_CARD(`${STEP(3,'프롬프트 라이브러리')} <ul style="padding-left:16px;list-style:disc;display:flex;flex-direction:column;gap:4px"><li>상단 <strong>「프롬프트」</strong>를 눌러 모든 AI 프롬프트를 확인합니다.</li><li><strong>byteexam 2s</strong> 카드에서 시험 범위·난이도를 입력하면 맞춤 프롬프트가 자동 생성됩니다.</li></ul>`, '')}
+    ${GUIDE_CARD(`${STEP(2,'콘텐츠 글쓰기')} <ul style="padding-left:16px;list-style:disc;display:flex;flex-direction:column;gap:4px"><li>상단 <strong>「+ 글쓰기」</strong>를 눌러 콘텐츠 종류를 선택합니다.</li><li><strong>bytenode 3</strong> — 일반 블로그 글 / <strong>bytegraphic 2e</strong> — 인포그래픽 / <strong>bytenode-ppt 2e</strong> — PPT 슬라이드</li><li>AI 프롬프트를 복사해서 Claude/GPT 등에 붙여넣고, 결과 코드를 다시 붙여넣으면 자동으로 렌더링됩니다.</li></ul>`, '')}
+    ${GUIDE_CARD(`${STEP(3,'프롬프트 라이브러리')} <ul style="padding-left:16px;list-style:disc;display:flex;flex-direction:column;gap:4px"><li>상단 <strong>「프롬프트」</strong>를 눌러 모든 AI 프롬프트를 확인합니다.</li><li><strong>byteexam 3s</strong> 업데이트 내역과 교과서형 지문 문법을 확인할 수 있습니다.</li></ul>`, '')}
 
     <!-- byteexam 사용법 -->
     <h3 style="font-size:15px;font-weight:700;margin:24px 0 14px;padding-bottom:6px;border-bottom:1px solid var(--border)">📋 byteexam 사용법</h3>
@@ -2186,7 +2209,7 @@ async function renderWrite(app, editId) {
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
       <h2 style="font-size:1.3rem;margin:0">${editId?'글 수정':'새 글 작성'}</h2>
       <select id="modeSel" onchange="setEditorMode(this.value)" style="font-size:12px;padding:5px 10px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:8px;cursor:pointer">
-        <option value="bytenode">bytenode 2</option>
+        <option value="bytenode">bytenode 3</option>
         <option value="flashinfo">bytegraphic 2e</option>
         <option value="flashppt">bytenode-ppt 2e</option>
       </select>
@@ -2986,6 +3009,7 @@ async function adminUsers(el) {
             <option value="" ${!u.accountType?'selected':''}>일반</option>
             <option value="class" ${u.accountType==='class'?'selected':''}>학급특색사업 (for class)</option>
             <option value="scivill" ${u.accountType==='scivill'?'selected':''}>동아리 (for scivill)</option>
+            <option value="dshs" ${u.accountType==='dshs'?'selected':''}>대신고 (for dshs)</option>
           </select></td>
           <td>${u.isAdmin?'✅':'—'}</td>
           <td style="text-align:center;color:var(--muted)">${u.postCount||0}</td>
@@ -3120,7 +3144,7 @@ async function adminBanFromReport(username) {
 async function adminPrompts(el) {
   try {
     const list = await api('GET','/prompts');
-    const CODES = ['byteexam 2.1s','byteexam 2s','byteexam 1s','byteexam 1e','bytenode 2','bytegraphic 2e','bytenode-ppt 2e'];
+    const CODES = ['byteexam 3s','byteexam 2.1s','byteexam 2s','byteexam 1s','byteexam 1e','bytenode 3','bytenode 2','bytegraphic 2e','bytenode-ppt 2e'];
     el.innerHTML = `
     <div class="admin-title">프롬프트 관리 <span style="font-size:13px;color:var(--muted)">(${list.length}개)</span></div>
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:24px">
@@ -3653,7 +3677,7 @@ function showHelp() {
   document.body.removeChild(a);
 }
 
-const AI_PROMPT = `너는 bytenode 블로그의 글 작성자야. 아래의 태그 문법만 사용해서 글을 써줘.
+const AI_PROMPT = `너는 bytenode 3 블로그의 글 작성자야. 아래의 태그 문법만 사용해서 글을 써줘.
 
 💡 붙여넣기 전, AI의 사고 모드(잘 생각하기) 또는 Pro 모드로 전환하는 것을 권장합니다.
 
@@ -3670,7 +3694,7 @@ const AI_PROMPT = `너는 bytenode 블로그의 글 작성자야. 아래의 태�
 ✓ 코드 블록 바깥에는 단 한 글자도 출력 금지
 ✓ 태그 사이의 빈 줄 (세로 공백용으로만)
 
-【필수 규칙 (bytenode 1 공통)】
+【필수 규칙 (bytenode 3 공통)】
 1. 모든 태그는 <명령: 내용> 형식이야. 태그 안에 절대 > 문자를 쓰지 마.
 2. 태그 안에 태그를 절대 중첩하지 마. <indent: <mark: 내용>> 이런 형식은 완전히 금지.
 3. 링크는 {https://url} 링크문구 형식으로만 써. Markdown [텍스트](URL) 절대 금지.
@@ -3746,6 +3770,15 @@ $$\\ce{6CO2 + 6H2O -> C6H12O6 + 6O2}$$ → 광합성 (블록)
 - 첫 행이 자동으로 헤더(굵은 배경)
 - 헤더 없애려면 끝에 header:no 추가
 - 셀 안에 | 나 // 는 사용 불가
+
+【출처 각주 — bytenode 3】
+<footnote: 출처: 기관명·문서명·연도 또는 URL> → 작은 출처 각주
+
+출처 규칙:
+- 통계·법령·연구 결과·변할 수 있는 사실을 사용하면 해당 내용 바로 다음 줄에 <footnote: ...>를 작성해.
+- 실제로 확인하지 않은 기관명·문서·URL을 꾸며내지 마.
+- 출처를 확인할 수 없으면 구체적인 수치나 인용을 빼고 일반적인 설명으로 바꿔.
+- 사용자의 개인적 경험·감상처럼 출처가 필요 없는 문장에는 각주를 남발하지 마.
 
 【수학 그래프】
 <graph: y=수식>                          → 기본 그래프 (x범위 -10~10, 크기 medium)
