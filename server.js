@@ -888,12 +888,12 @@ app.get('/api/admin/users', auth, adminOnly, async (req, res) => {
   } catch(e) { console.error('[admin/users]', e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
-/* 계정 유형 분류: '' | 'class'(학급특색사업) | 'scivill'(동아리) */
+/* 계정 유형 분류: ''(일반) | 'class'(학급특색사업) | 'scivill'(동아리) | 'dshs'(대신고) */
 app.post('/api/admin/account-type', auth, adminOnly, async (req, res) => {
   try {
     const { id, type } = req.body || {};
     if (!id) return res.status(400).json({ error: '대상 ID 필요' });
-    if (!['', 'class', 'scivill'].includes(type)) return res.status(400).json({ error: '유형은 class, scivill 또는 빈 값이어야 합니다.' });
+    if (!['', 'class', 'scivill', 'dshs'].includes(type)) return res.status(400).json({ error: '유형은 class, scivill, dshs 또는 빈 값이어야 합니다.' });
     const doc = await db.collection('users').doc(id).get();
     if (!doc.exists) return res.status(404).json({ error: '유저 없음' });
     await db.collection('users').doc(id).update({ accountType: type });

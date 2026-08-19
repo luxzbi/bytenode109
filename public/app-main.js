@@ -110,8 +110,10 @@ function renderHeader() {
   /* 계정 유형 배지: 관리자 분류에 따라 로고 옆 표시 */
   const badge = document.getElementById('logoBadge');
   if (badge) {
-    const t = me && me.accountType;
-    badge.textContent = t === 'class' ? 'for class' : t === 'scivill' ? 'for scivill' : 'for dshs';
+    const labels = { class: 'for class', scivill: 'for scivill', dshs: 'for dshs' };
+    const label = labels[me && me.accountType] || '';
+    badge.textContent = label;
+    badge.hidden = !label;
   }
   const el = document.getElementById('headerRight');
   const mn = document.getElementById('mobileNav');
@@ -121,7 +123,7 @@ function renderHeader() {
     mn.innerHTML = `
       <button class="hbtn" onclick="cmm();showPage('prompts')">🔖 버전 정보</button>
       <a class="hbtn" href="https://byteexam109.vercel.app" style="text-decoration:none">📋 byteexam</a>
-      <a class="hbtn" href="https://bytetext.vercel.app" style="text-decoration:none">✍️ bytetext</a>
+      <a class="hbtn" href="https://byteworkspace.vercel.app" style="text-decoration:none">🏠 byteworkspace</a>
       <button class="hbtn" onclick="cmm();showPage('guide')">📖 사용방법</button>
       <button class="hbtn" onclick="cmm();showPage('notices')">📢 공지</button>
       <button class="hbtn" onclick="cmm();showPage('login')">로그인</button>
@@ -146,7 +148,7 @@ function renderHeader() {
       </div>
       <button class="hbtn" onclick="cmm();showPage('prompts')">🔖 버전 정보</button>
       <a class="hbtn" href="https://byteexam109.vercel.app" style="text-decoration:none">📋 byteexam</a>
-      <a class="hbtn" href="https://bytetext.vercel.app" style="text-decoration:none">✍️ bytetext</a>
+      <a class="hbtn" href="https://byteworkspace.vercel.app" style="text-decoration:none">🏠 byteworkspace</a>
       <button class="hbtn" onclick="cmm();showPage('guide')">📖 사용방법</button>
       <button class="hbtn" onclick="cmm();showPage('notices')">📢 공지</button>
       <button class="hbtn" onclick="cmm();showPage('mybox')">📁 내 저장소</button>
@@ -2986,6 +2988,7 @@ async function adminUsers(el) {
             <option value="" ${!u.accountType?'selected':''}>일반</option>
             <option value="class" ${u.accountType==='class'?'selected':''}>학급특색사업 (for class)</option>
             <option value="scivill" ${u.accountType==='scivill'?'selected':''}>동아리 (for scivill)</option>
+            <option value="dshs" ${u.accountType==='dshs'?'selected':''}>대신고 (for dshs)</option>
           </select></td>
           <td>${u.isAdmin?'✅':'—'}</td>
           <td style="text-align:center;color:var(--muted)">${u.postCount||0}</td>
