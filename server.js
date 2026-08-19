@@ -418,12 +418,41 @@ const upload = multer({
   fileFilter: (req, file, cb) => ALLOWED_MIME.test(file.mimetype) ? cb(null, true) : cb(new Error('허용되지 않는 파일 형식입니다.')),
   limits: { fileSize: 50 * 1024 * 1024 }
 });
+const AVATAR_MIME = /^image\/(jpeg|png|webp)$/;
+const avatarUpload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: (req, file, cb) => AVATAR_MIME.test(file.mimetype) ? cb(null, true) : cb(new Error('PNG, JPG, WEBP 이미지만 사용할 수 있습니다.')),
+  limits: { fileSize: 2 * 1024 * 1024, files: 1 }
+}).single('avatar');
+
+function acceptAvatar(req, res, next) {
+  avatarUpload(req, res, err => {
+    if (!err) return next();
+    if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({ error: '프로필 이미지는 2MB 이하여야 합니다.' });
+    }
+    return res.status(400).json({ error: err.message || '프로필 이미지를 확인할 수 없습니다.' });
+  });
+}
+
 async function uploadToBlob(file) {
   const { put } = require('@vercel/blob');
   const extMap = { 'image/jpeg':'.jpg','image/png':'.png','image/gif':'.gif','image/webp':'.webp','image/avif':'.avif','video/mp4':'.mp4','video/webm':'.webm','video/ogg':'.ogv','model/gltf-binary':'.glb','model/gltf+json':'.gltf' };
   const ext = extMap[file.mimetype] || '.bin';
   const blob = await put(uuid() + ext, file.buffer, { access: 'public' });
   return blob.url;
+}
+
+async function deleteStoredBlob(url) {
+  if (!url) return;
+  try {
+    const parsed = new URL(url);
+    if (!parsed.hostname.endsWith('.public.blob.vercel-storage.com')) return;
+    const { del } = require('@vercel/blob');
+    await del(url);
+  } catch (e) {
+    console.error('[blob delete]', e.message);
+  }
 }
 
 /* ── 토큰 무효화(revoke) 지원 ──
@@ -600,11 +629,21 @@ app.post('/api/auth/logout-all', auth, async (req, res) => {
   } catch(e) { console.error('[logout-all]', e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
-app.post('/api/auth/avatar', auth, upload.single('avatar'), async (req, res) => {
+app.post('/api/auth/avatar', auth, acceptAvatar, async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: '파일이 없습니다.' });
+    const ref = db.collection('users').doc(req.user.id);
+    const doc = await ref.get();
+    if (!doc.exists) return res.status(404).json({ error: '유저를 찾을 수 없습니다.' });
+    const oldUrl = doc.data().avatar || '';
     const url = await uploadToBlob(req.file);
-    await db.collection('users').doc(req.user.id).update({ avatar: url });
+    try {
+      await ref.update({ avatar: url });
+    } catch (e) {
+      await deleteStoredBlob(url);
+      throw e;
+    }
+    await deleteStoredBlob(oldUrl);
     res.json({ url });
   } catch(e) { console.error('[avatar]', e); res.status(500).json({ error: '업로드 실패' }); }
 });
