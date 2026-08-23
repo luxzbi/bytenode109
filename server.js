@@ -482,6 +482,8 @@ async function auth(req, res, next) {
   let payload;
   try { payload = jwt.verify(h.slice(7), JWT_SECRET); }
   catch { return res.status(401).json({ error: '만료되었거나 잘못된 토큰입니다.' }); }
+  /* OAuth access token은 profile 전용이다. 일반 계정·콘텐츠 API에서 세션처럼 쓸 수 없다. */
+  if (payload.token_use === 'oauth') return res.status(401).json({ error: '계정 세션 토큰이 필요합니다.' });
   try {
     /* 구 토큰(tv 없음)은 0으로 간주 → 기존 세션 유지, 이후 bump로 무효화 가능 */
     let cur = await currentTokenVersion(payload.id);
@@ -1379,34 +1381,43 @@ app.post('/api/chatbot/ai', async (req, res) => {
 /* ══ OAuth 클라이언트 (bytenode-account 개발자 콘솔용) ══ */
 const nodeCrypto = require('crypto');
 const sha256 = s => nodeCrypto.createHash('sha256').update(s).digest('hex');
-/* 전체 redirect URI 허용 (경로·쿼리 포함 가능, http/https만) */
-const validRedirectUri = v => { try { const u = new URL(v); return u.protocol === 'https:' || u.protocol === 'http:'; } catch { return false; } };
+const OAUTH_TOKEN_ISSUER = (process.env.OAUTH_ISSUER || 'https://bytenode-account.vercel.app').replace(/\/+$/, '');
+const OAUTH_USERINFO_AUDIENCE = OAUTH_TOKEN_ISSUER + '/userinfo';
+/* 운영 redirect는 HTTPS, 로컬 loopback만 HTTP를 허용한다. */
+const validRedirectUri = v => {
+  try {
+    const u = new URL(v);
+    const local = /^(localhost|127\.0\.0\.1)$/.test(u.hostname);
+    return !u.hash && !u.username && !u.password && (u.protocol === 'https:' || (u.protocol === 'http:' && local));
+  } catch { return false; }
+};
 
 app.post('/api/oauth/clients', auth, async (req, res) => {
   try {
-    const { name, origins, uris } = req.body || {};
+    const { name, origins, uris, clientType } = req.body || {};
     const nm = String(name || '').trim();
+    const type = clientType === 'public' ? 'public' : 'confidential';
     if (!nm || nm.length > 40) return res.status(400).json({ error: '앱 이름은 1~40자여야 합니다.' });
     const raw = Array.isArray(uris) ? uris : (Array.isArray(origins) ? origins : []);
-    const list = raw.map(o => String(o).trim().replace(/\/+$/, '')).filter(Boolean);
+    const list = raw.map(o => String(o).trim()).filter(Boolean);
     if (!list.length || list.length > 10) return res.status(400).json({ error: 'redirect URI는 1~10개 등록해야 합니다.' });
     for (const o of list) if (!validRedirectUri(o)) return res.status(400).json({ error: `잘못된 redirect URI: ${o} (http/https 주소여야 합니다)` });
     const mine = await db.collection('oauthClients').where('ownerId', '==', req.user.id).get();
     if (mine.size >= 10) return res.status(400).json({ error: '앱은 계정당 최대 10개까지 등록할 수 있습니다.' });
     const clientId = 'bn_' + nodeCrypto.randomBytes(8).toString('hex');
-    const secret = 'sk_' + nodeCrypto.randomBytes(24).toString('hex');
+    const secret = type === 'confidential' ? 'sk_' + nodeCrypto.randomBytes(24).toString('hex') : null;
     await db.collection('oauthClients').doc(clientId).set({
       name: nm, redirectUris: list, ownerId: req.user.id, ownerName: req.user.username,
-      secretHash: sha256(secret), createdAt: Date.now()
+      clientType: type, secretHash: secret ? sha256(secret) : null, createdAt: Date.now()
     });
-    res.status(201).json({ clientId, clientSecret: secret, name: nm, redirectUris: list });
+    res.status(201).json({ clientId, ...(secret ? { clientSecret: secret } : {}), clientType: type, name: nm, redirectUris: list });
   } catch (e) { console.error('[oauth create]', e); res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
 app.get('/api/oauth/clients', auth, async (req, res) => {
   try {
     const snap = await db.collection('oauthClients').where('ownerId', '==', req.user.id).get();
-    res.json(snap.docs.map(d => { const c = d.data(); return { clientId: d.id, name: c.name, redirectUris: c.redirectUris || c.origins || [], createdAt: c.createdAt }; }));
+    res.json(snap.docs.map(d => { const c = d.data(); return { clientId: d.id, name: c.name, clientType: c.clientType || 'confidential', redirectUris: c.redirectUris || c.origins || [], createdAt: c.createdAt }; }));
   } catch (e) { res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
@@ -1426,7 +1437,7 @@ app.get('/api/oauth/clients/:id/public', async (req, res) => {
     const doc = await db.collection('oauthClients').doc(req.params.id).get();
     if (!doc.exists) return res.status(404).json({ error: '등록되지 않은 client_id입니다.' });
     const c = doc.data();
-    res.json({ clientId: doc.id, name: c.name, redirectUris: c.redirectUris || c.origins || [] });
+    res.json({ clientId: doc.id, name: c.name, clientType: c.clientType || 'confidential', redirectUris: c.redirectUris || c.origins || [] });
   } catch (e) { res.status(500).json({ error: '서버 오류가 발생했습니다.' }); }
 });
 
@@ -1434,7 +1445,10 @@ app.get('/api/oauth/clients/:id/public', async (req, res) => {
    미설정 시 통과(개발 편의)하되, 운영에서는 반드시 INTERNAL_SECRET 설정. */
 const INTERNAL_SECRET = process.env.INTERNAL_SECRET || '';
 function internalOnly(req, res, next) {
-  if (!INTERNAL_SECRET) return next();
+  if (!INTERNAL_SECRET) {
+    if (process.env.NODE_ENV === 'production') return res.status(503).json({ error: 'internal_auth_unavailable' });
+    return next();
+  }
   if (req.headers['x-internal-secret'] === INTERNAL_SECRET) return next();
   return res.status(403).json({ error: 'forbidden' });
 }
@@ -1442,16 +1456,37 @@ function internalOnly(req, res, next) {
 /* ── OAuth 인가 코드 grant 저장소 (opaque code, 1회성) ──
    SSO 서버가 로그인 완료 시 grant를 만들고, /token 교환 때 1회만 소비.
    access_token은 code에 담지 않고 여기 서버에만 저장됨. */
+async function verifiedSession(rawToken) {
+  const payload = jwt.verify(String(rawToken || ''), JWT_SECRET);
+  if (payload.token_use === 'oauth') throw new Error('not_session_token');
+  const current = await currentTokenVersion(payload.id);
+  if ((payload.tv || 0) !== current) throw new Error('revoked_session');
+  const doc = await db.collection('users').doc(payload.id).get();
+  if (!doc.exists || doc.data().banned) throw new Error('invalid_user');
+  return { payload, user: mapUser(doc.id, doc.data()) };
+}
+
+function oauthProfile(user) {
+  return {
+    id: user.id,
+    username: user.username,
+    displayName: user.displayName,
+    bio: user.bio,
+    avatar: user.avatar,
+    accountType: user.accountType
+  };
+}
+
 app.post('/api/oauth/grant', internalOnly, async (req, res) => {
   try {
-    const { code, token, clientId, redirectUri, codeChallenge } = req.body || {};
+    const { code, token, clientId, redirectUri, codeChallenge, scope = 'profile' } = req.body || {};
     if (!code || !token || !clientId || !redirectUri) return res.status(400).json({ error: '필수 파라미터 누락' });
-    /* 토큰이 실제 유효한지 확인 */
-    let u; try { u = jwt.verify(token, JWT_SECRET); } catch { return res.status(401).json({ error: '유효하지 않은 토큰' }); }
+    if (scope !== 'profile') return res.status(400).json({ error: 'invalid_scope' });
+    let session; try { session = await verifiedSession(token); } catch { return res.status(401).json({ error: '유효하지 않은 세션 토큰' }); }
     await db.collection('oauthCodes').doc(sha256(String(code))).set({
       token: String(token), clientId: String(clientId), redirectUri: String(redirectUri),
       codeChallenge: codeChallenge ? String(codeChallenge) : null,
-      userId: u.id || '', used: false, expiresAt: Date.now() + 120000, createdAt: Date.now()
+      scope: 'profile', userId: session.payload.id || '', used: false, expiresAt: Date.now() + 120000, createdAt: Date.now()
     });
     res.status(201).json({ ok: true });
   } catch (e) { console.error('[oauth grant]', e); res.status(500).json({ error: '서버 오류' }); }
@@ -1474,7 +1509,7 @@ app.post('/api/oauth/grant/consume', internalOnly, async (req, res) => {
       return { g };
     });
     if (result.err) return res.status(400).json({ error: result.err });
-    res.json({ token: result.g.token, redirectUri: result.g.redirectUri, codeChallenge: result.g.codeChallenge });
+    res.json({ token: result.g.token, redirectUri: result.g.redirectUri, codeChallenge: result.g.codeChallenge, scope: result.g.scope || 'profile' });
   } catch (e) { console.error('[oauth consume]', e); res.status(500).json({ error: 'server_error' }); }
 });
 
@@ -1484,9 +1519,59 @@ app.post('/api/oauth/verify', internalOnly, async (req, res) => {
     const { clientId, clientSecret } = req.body || {};
     if (!clientId || !clientSecret) return res.status(400).json({ ok: false });
     const doc = await db.collection('oauthClients').doc(String(clientId)).get();
-    if (!doc.exists || doc.data().secretHash !== sha256(String(clientSecret))) return res.status(401).json({ ok: false });
-    res.json({ ok: true, name: doc.data().name, origins: doc.data().origins });
+    if (!doc.exists || (doc.data().clientType || 'confidential') !== 'confidential' || !doc.data().secretHash || doc.data().secretHash !== sha256(String(clientSecret))) return res.status(401).json({ ok: false });
+    res.json({ ok: true, name: doc.data().name, clientType: 'confidential' });
   } catch (e) { res.status(500).json({ ok: false }); }
+});
+
+/* 세션 JWT를 외부 앱용 1시간 profile 토큰으로 교환한다. */
+app.post('/api/oauth/token', internalOnly, async (req, res) => {
+  try {
+    const { sessionToken, clientId, builtin = false, scope = 'profile' } = req.body || {};
+    if (!sessionToken || !clientId || scope !== 'profile') return res.status(400).json({ error: 'invalid_request' });
+    if (/^bn_[0-9a-f]{16}$/.test(String(clientId))) {
+      const client = await db.collection('oauthClients').doc(String(clientId)).get();
+      if (!client.exists) return res.status(401).json({ error: 'invalid_client' });
+    } else if (!builtin) return res.status(401).json({ error: 'invalid_client' });
+    let session; try { session = await verifiedSession(sessionToken); } catch { return res.status(401).json({ error: 'invalid_grant' }); }
+    const accessToken = jwt.sign({
+      id: session.user.id,
+      client_id: String(clientId),
+      token_use: 'oauth',
+      scope: 'profile',
+      builtin: !!builtin,
+      tv: session.user.tokenVersion || 0
+    }, JWT_SECRET, {
+      expiresIn: '1h',
+      issuer: OAUTH_TOKEN_ISSUER,
+      audience: OAUTH_USERINFO_AUDIENCE,
+      subject: session.user.id,
+      jwtid: nodeCrypto.randomUUID()
+    });
+    res.json({ accessToken, tokenType: 'Bearer', expiresIn: 3600, scope: 'profile', user: oauthProfile(session.user) });
+  } catch (e) { console.error('[oauth token]', e); res.status(500).json({ error: 'server_error' }); }
+});
+
+/* OAuth 토큰은 이 profile 엔드포인트에서만 사용 가능하다. */
+app.get('/api/oauth/userinfo', async (req, res) => {
+  try {
+    const header = String(req.headers.authorization || '');
+    if (!header.startsWith('Bearer ')) return res.status(401).json({ error: 'invalid_token' });
+    let payload;
+    try { payload = jwt.verify(header.slice(7), JWT_SECRET, { issuer: OAUTH_TOKEN_ISSUER, audience: OAUTH_USERINFO_AUDIENCE }); }
+    catch { return res.status(401).json({ error: 'invalid_token' }); }
+    if (payload.token_use !== 'oauth' || payload.scope !== 'profile' || !payload.client_id)
+      return res.status(401).json({ error: 'invalid_token' });
+    if (!payload.builtin) {
+      const client = await db.collection('oauthClients').doc(String(payload.client_id)).get();
+      if (!client.exists) return res.status(401).json({ error: 'invalid_token' });
+    }
+    const current = await currentTokenVersion(payload.id);
+    if ((payload.tv || 0) !== current) return res.status(401).json({ error: 'invalid_token' });
+    const doc = await db.collection('users').doc(payload.id).get();
+    if (!doc.exists || doc.data().banned) return res.status(401).json({ error: 'invalid_token' });
+    res.json(oauthProfile(mapUser(doc.id, doc.data())));
+  } catch (e) { console.error('[oauth userinfo]', e); res.status(500).json({ error: 'server_error' }); }
 });
 
 /* ══ 가입/로그인은 통합 계정 서버(bytenode-account)로 이관 ══ */
