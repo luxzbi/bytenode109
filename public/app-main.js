@@ -119,7 +119,7 @@ function renderHeader() {
   const mn = document.getElementById('mobileNav');
   if (!me) {
     el.innerHTML = `<button class="hbtn" onclick="showPage('prompts')">버전 정보</button><a class="hbtn" href="https://byteexam109.vercel.app" style="text-decoration:none">byteexam</a>
-      <a class="hbtn" href="https://bytetext.vercel.app" style="text-decoration:none">bytetext</a><button class="hbtn" onclick="showPage('guide')">사용방법</button><button class="hbtn" onclick="showPage('notices')">공지</button><button class="hbtn" onclick="showPage('login')">로그인</button><button class="hbtn primary" onclick="showPage('register')">회원가입</button>`;
+      <a class="hbtn" href="https://byteworkspace.vercel.app" style="text-decoration:none">byteworkspace</a><button class="hbtn" onclick="showPage('guide')">사용방법</button><button class="hbtn" onclick="showPage('notices')">공지</button><button class="hbtn" onclick="showPage('login')">로그인</button><button class="hbtn primary" onclick="showPage('register')">회원가입</button>`;
     mn.innerHTML = `
       <button class="hbtn" onclick="cmm();showPage('prompts')">🔖 버전 정보</button>
       <a class="hbtn" href="https://byteexam109.vercel.app" style="text-decoration:none">📋 byteexam</a>
@@ -133,7 +133,7 @@ function renderHeader() {
     el.innerHTML = `
       <button class="hbtn" onclick="showPage('prompts')">버전 정보</button>
       <a class="hbtn" href="https://byteexam109.vercel.app" style="text-decoration:none">byteexam</a>
-      <a class="hbtn" href="https://bytetext.vercel.app" style="text-decoration:none">bytetext</a>
+      <a class="hbtn" href="https://byteworkspace.vercel.app" style="text-decoration:none">byteworkspace</a>
       <button class="hbtn" onclick="showPage('guide')">사용방법</button>
       <button class="hbtn" onclick="showPage('notices')">공지</button>
       <button class="hbtn" onclick="showPage('mybox')">📁 내 저장소</button>
